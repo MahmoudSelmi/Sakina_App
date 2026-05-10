@@ -1,16 +1,14 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sakina_app/SplashScreen.dart';
+import 'package:sakina_app/features/home/logic/audio_player_cubit.dart';
+import 'package:sakina_app/features/home/ui/screens/home_screen.dart';
+import 'core/theming/colors.dart';
+import 'features/home/logic/home_cubit.dart';
 
-import 'core/theme/app_theme.dart';
-import 'firebase_options.dart';
-
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
   runApp(const SakinaApp());
 }
 
@@ -20,18 +18,30 @@ class SakinaApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ScreenUtilInit(
-      designSize: const Size(390, 844),
+      designSize: const Size(375, 812), // iPhone 13 dimensions for precision
       minTextAdapt: true,
-      splitScreenMode: true,
-      builder: (_, child) {
-        return MaterialApp(
-          debugShowCheckedModeBanner: false,
-          title: 'Sakina',
-          theme: AppTheme.darkTheme,
-          home: child,
+      builder: (context, child) {
+        return MultiBlocProvider(
+          providers: [
+            BlocProvider(create: (context) => HomeCubit()),
+            BlocProvider(create: (context) => PlayerCubit()),
+          ],
+          child: MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'Sakina',
+            theme: ThemeData(
+              useMaterial3: true,
+              scaffoldBackgroundColor: ColorsManager.mainDark,
+              fontFamily: 'Cairo', // تأكد من إضافة الخط في pubspec
+            ),
+            initialRoute: '/',
+            routes: {
+              '/': (context) => const SplashScreen(),
+              '/home': (context) => const HomeScreen(),
+            },
+          ),
         );
       },
-      child: const SplashView(),
     );
   }
 }

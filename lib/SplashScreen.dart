@@ -1,48 +1,21 @@
-import 'dart:async';
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
-import 'package:sakina_app/core/theme/app_colors.dart';
-import 'package:sakina_app/features/home/presentation/view/home_view.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-class SplashView extends StatefulWidget {
-  const SplashView({super.key});
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
 
   @override
-  State<SplashView> createState() => _SplashViewState();
+  State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashViewState extends State<SplashView>
-    with SingleTickerProviderStateMixin {
-  late AnimationController controller;
-
-  late Animation<double> fadeAnimation;
-
+class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-
-    controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    );
-
-    fadeAnimation = Tween<double>(begin: 0, end: 1).animate(controller);
-
-    controller.forward();
-
-    Timer(const Duration(seconds: 3), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomeView()),
-      );
+    Future.delayed(const Duration(seconds: 4), () {
+      if (mounted) Navigator.pushReplacementNamed(context, '/home');
     });
-  }
-
-  @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
   }
 
   @override
@@ -51,99 +24,36 @@ class _SplashViewState extends State<SplashView>
       body: Container(
         width: double.infinity,
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xff070B14), Color(0xff0F172A), Color(0xff111827)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+          gradient: RadialGradient(
+            colors: [Color(0xFF1E293B), Color(0xFF020617)],
+            radius: 1.2,
           ),
         ),
-        child: Stack(
-          alignment: Alignment.center,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Positioned(
-              top: -120,
-              right: -100,
-              child: Container(
-                height: 260,
-                width: 260,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.primary.withOpacity(.18),
+            Icon(
+                  Icons.auto_awesome,
+                  size: 80.sp,
+                  color: const Color(0xFFD4AF37),
+                )
+                .animate()
+                .shimmer(duration: 2.seconds)
+                .scale(
+                  begin: const Offset(0.5, 0.5),
+                  end: const Offset(1, 1),
+                  curve: Curves.easeOut,
                 ),
+            SizedBox(height: 20.h),
+            Text(
+              'S A K I N A',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 32.sp,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 8,
               ),
-            ),
-
-            Positioned(
-              bottom: -140,
-              left: -100,
-              child: Container(
-                height: 280,
-                width: 280,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.secondary.withOpacity(.12),
-                ),
-              ),
-            ),
-
-            BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 120, sigmaY: 120),
-              child: const SizedBox(),
-            ),
-
-            FadeTransition(
-              opacity: fadeAnimation,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    height: 130,
-                    width: 130,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: [AppColors.primary, AppColors.secondary],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withOpacity(.4),
-                          blurRadius: 40,
-                          spreadRadius: 5,
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.graphic_eq_rounded,
-                      color: Colors.white,
-                      size: 60,
-                    ),
-                  ),
-
-                  const SizedBox(height: 35),
-
-                  const Text(
-                    'Sakina',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 42,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.5,
-                    ),
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  Text(
-                    'Listen To Quran With Peace',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(.6),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.2, end: 0),
           ],
         ),
       ),
