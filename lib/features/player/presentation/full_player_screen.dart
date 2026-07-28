@@ -3,8 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../shared/widgets/reciter_avatar.dart';
+import '../../downloads/data/download_service.dart';
+import '../../favorites/data/favorites_service.dart';
 import '../cubit/player_cubit.dart';
 import '../cubit/player_state.dart';
+import '../data/queue_item.dart';
 
 class FullPlayerScreen extends StatelessWidget {
   const FullPlayerScreen({super.key});
@@ -69,22 +73,22 @@ class FullPlayerScreen extends StatelessWidget {
                       width: 280.w,
                       height: 280.w,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(28),
-                        gradient: LinearGradient(
-                          colors: AppColors.goldGradient,
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.accentGold.withOpacity(0.25),
+                            color: AppColors.accentGold.withValues(alpha: 0.25),
                             blurRadius: 40,
                             spreadRadius: 4,
                           ),
                         ],
                       ),
-                      child: const Icon(Icons.menu_book_rounded,
-                          size: 96, color: Colors.black87),
+                      child: ReciterAvatar(
+                        reciterId: item.reciterId,
+                        letter: item.reciterName.isNotEmpty
+                            ? item.reciterName[0]
+                            : '؟',
+                        size: 280.w,
+                        heroTag: 'reciter-avatar-${item.reciterId}',
+                      ),
                     ),
                     const Spacer(),
                     Text(item.surahArabicName,
@@ -190,10 +194,8 @@ class FullPlayerScreen extends StatelessWidget {
                             context, Icons.bedtime_rounded, 'مؤقت النوم', () {
                           _showSleepTimerSheet(context);
                         }),
-                        _bottomAction(context, Icons.favorite_border_rounded,
-                            'مفضلة', () {}),
-                        _bottomAction(
-                            context, Icons.download_rounded, 'تحميل', () {}),
+                        _FavoriteBottomAction(reciterId: item.reciterId),
+                        _DownloadBottomAction(item: item),
                       ],
                     ),
                     SizedBox(height: 16.h),
@@ -263,6 +265,106 @@ class FullPlayerScreen extends StatelessWidget {
           }).toList(),
         ),
       ),
+    );
+  }
+}
+
+class _FavoriteBottomAction extends StatelessWidget {
+  final int reciterId;
+
+  const _FavoriteBottomAction({required this.reciterId});
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return ValueListenableBuilder<Set<int>>(
+      valueListenable: FavoritesService.instance.favorites,
+      builder: (context, favorites, _) {
+        final isFav = favorites.contains(reciterId);
+        return InkWell(
+          onTap: () => FavoritesService.instance.toggle(reciterId),
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              children: [
+                Icon(
+                  isFav
+                      ? Icons.favorite_rounded
+                      : Icons.favorite_border_rounded,
+                  size: 22,
+                  color: isFav ? AppColors.error : null,
+                ),
+                const SizedBox(height: 4),
+                Text('مفضلة', style: AppTypography.label(brightness)),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _DownloadBottomAction extends StatelessWidget {
+  final QueueItem item;
+
+  const _DownloadBottomAction({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return ValueListenableBuilder<Map<String, DownloadState>>(
+      valueListenable: DownloadService.instance.states,
+      builder: (context, states, _) {
+        final downloaded = DownloadService.instance.isDownloaded(item.key);
+        final state = states[item.key] ?? const DownloadState();
+
+        if (state.isDownloading) {
+          return Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              children: [
+                SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.2,
+                    value: state.progress > 0 ? state.progress : null,
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text('جاري التحميل', style: AppTypography.label(brightness)),
+              ],
+            ),
+          );
+        }
+
+        return InkWell(
+          onTap: () => downloaded
+              ? DownloadService.instance.deleteDownload(item.key)
+              : DownloadService.instance.download(item.key, item.audioUrl),
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              children: [
+                Icon(
+                  downloaded
+                      ? Icons.download_done_rounded
+                      : Icons.download_rounded,
+                  size: 22,
+                  color: downloaded ? AppColors.success : null,
+                ),
+                const SizedBox(height: 4),
+                Text(downloaded ? 'محمّلة' : 'تحميل',
+                    style: AppTypography.label(brightness)),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

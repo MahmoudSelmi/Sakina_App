@@ -1,44 +1,26 @@
-name: sakina_app
-description: "A new Flutter project."
+pluginManagement {
+    val flutterSdkPath =
+        run {
+            val properties = java.util.Properties()
+            file("local.properties").inputStream().use { properties.load(it) }
+            val flutterSdkPath = properties.getProperty("flutter.sdk")
+            require(flutterSdkPath != null) { "flutter.sdk not set in local.properties" }
+            flutterSdkPath
+        }
 
-publish_to: 'none'
+    includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
 
-version: 1.0.0+1
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
 
-environment:
-  sdk: ^3.11.5
+plugins {
+    id("dev.flutter.flutter-plugin-loader") version "1.0.0"
+    id("com.android.application") version "8.11.1" apply false
+    id("org.jetbrains.kotlin.android") version "2.2.20" apply false
+}
 
-dependencies:
-  flutter:
-    sdk: flutter
-
-  cupertino_icons: ^1.0.8
-
-  flutter_bloc: ^8.1.6
-  equatable: ^2.0.5
-  dio: ^5.7.0
-  get_it: ^8.0.2
-
-  just_audio: ^0.9.42
-  audio_service: ^0.18.15
-
-  cached_network_image: ^3.4.1
-  flutter_screenutil: ^5.9.3
-  flutter_svg: ^2.0.10+1
-
-  shared_preferences: ^2.3.3
-  path_provider: ^2.1.5
-  permission_handler: ^11.3.1
-
-  firebase_core: ^3.15.1
-  cloud_firestore: ^5.6.0
-  firebase_storage: ^12.3.6
-
-dev_dependencies:
-  flutter_test:
-    sdk: flutter
-
-  flutter_lints: ^6.0.0
-
-flutter:
-  uses-material-design: true
+include(":app")

@@ -1,4 +1,4 @@
-package com.example.sakina_app
+package com.example.flutter_authentication_ui_hackathon
 
 import io.flutter.embedding.android.FlutterActivity
 

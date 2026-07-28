@@ -36,6 +36,9 @@ class QueueItem {
 
   String get audioUrl => ApiConstants.surahAudioUrl(moshafServer, surahNumber);
 
+  /// مفتاح ثابت لكل (قارئ + رواية + سورة)، بنستخدمه في تتبع التحميلات.
+  String get key => '${reciterId}_${moshafId}_$surahNumber';
+
   Map<String, dynamic> toJson() => {
         'reciterId': reciterId,
         'reciterName': reciterName,

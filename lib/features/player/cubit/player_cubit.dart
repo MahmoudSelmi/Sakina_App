@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:just_audio/just_audio.dart' hide PlayerState;
 import '../../../core/storage/local_storage.dart';
+import '../../downloads/data/download_service.dart';
 import '../data/queue_item.dart';
 import 'player_state.dart';
 
@@ -16,7 +18,7 @@ class PlayerCubit extends Cubit<PlayerState> {
   Timer? _persistTimer;
   Timer? _sleepTimer;
 
-  PlayerCubit() : super(PlayerState()) {
+  PlayerCubit() : super(const PlayerState()) {
     _init();
   }
 
@@ -112,7 +114,12 @@ class PlayerCubit extends Cubit<PlayerState> {
     emit(state.copyWith(status: PlayerStatus.loading, isBuffering: true));
 
     try {
-      await _audioPlayer.setUrl(item.audioUrl);
+      final localPath = DownloadService.instance.localPath(item.key);
+      if (localPath != null && await File(localPath).exists()) {
+        await _audioPlayer.setFilePath(localPath);
+      } else {
+        await _audioPlayer.setUrl(item.audioUrl);
+      }
       if (seekTo != null && seekTo > Duration.zero) {
         await _audioPlayer.seek(seekTo);
       }

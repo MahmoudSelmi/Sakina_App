@@ -38,8 +38,10 @@ class AppColors {
   static const List<Color> goldGradient = [accentGoldSoft, accentGold];
 
   static Color glassFill(Brightness b) =>
-      (b == Brightness.dark ? Colors.white : Colors.black).withOpacity(0.06);
+      (b == Brightness.dark ? Colors.white : Colors.black)
+          .withValues(alpha: 0.06);
 
   static Color glassBorder(Brightness b) =>
-      (b == Brightness.dark ? Colors.white : Colors.black).withOpacity(0.10);
+      (b == Brightness.dark ? Colors.white : Colors.black)
+          .withValues(alpha: 0.10);
 }

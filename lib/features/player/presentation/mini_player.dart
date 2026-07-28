@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../shared/widgets/glass_card.dart';
+import '../../../shared/widgets/reciter_avatar.dart';
 import '../cubit/player_cubit.dart';
 import '../cubit/player_state.dart';
 import 'full_player_screen.dart';
@@ -49,18 +50,10 @@ class MiniPlayer extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Container(
-                        width: 44.w,
-                        height: 44.w,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          gradient: LinearGradient(
-                            colors: AppColors.goldGradient,
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                        ),
-                        child: const Icon(Icons.menu_book_rounded, color: Colors.black87),
+                      ReciterAvatar(
+                        reciterId: item.reciterId,
+                        letter: item.reciterName.isNotEmpty ? item.reciterName[0] : '؟',
+                        size: 44.w,
                       ),
                       SizedBox(width: 12.w),
                       Expanded(
