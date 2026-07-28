@@ -37,8 +37,8 @@ class AppTheme {
           TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
         },
       ),
-      splashColor: AppColors.primary.withValues(alpha: 0.08),
-      highlightColor: AppColors.primary.withValues(alpha: 0.04),
+      splashColor: AppColors.primary.withOpacity(0.08),
+      highlightColor: AppColors.primary.withOpacity(0.04),
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -51,7 +51,7 @@ class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
       dividerTheme: DividerThemeData(
-        color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.06),
+        color: (isDark ? Colors.white : Colors.black).withOpacity(0.06),
         thickness: 1,
       ),
     );

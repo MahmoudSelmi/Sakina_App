@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/constants/surah_data.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/utils/moshaf_style.dart';
 import '../../../shared/widgets/reciter_avatar.dart';
 import '../../../shared/widgets/staggered_fade_in.dart';
 import '../../downloads/data/download_service.dart';
@@ -42,13 +43,10 @@ class _ReciterDetailScreenState extends State<ReciterDetailScreen> {
     final moshaf = _selectedMoshaf;
     if (moshaf == null) return;
     final queue = moshaf.surahList
-        .map((s) => QueueItem.fromReciter(
-            reciter: widget.reciter, moshaf: moshaf, surahNumber: s))
+        .map((s) => QueueItem.fromReciter(reciter: widget.reciter, moshaf: moshaf, surahNumber: s))
         .toList();
     final startIndex = queue.indexWhere((q) => q.surahNumber == surahNumber);
-    context
-        .read<PlayerCubit>()
-        .playQueue(queue, startIndex: startIndex < 0 ? 0 : startIndex);
+    context.read<PlayerCubit>().playQueue(queue, startIndex: startIndex < 0 ? 0 : startIndex);
   }
 
   @override
@@ -68,24 +66,21 @@ class _ReciterDetailScreenState extends State<ReciterDetailScreen> {
                     padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 8.h),
                     child: Row(
                       children: [
-                        IconButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(Icons.arrow_forward_rounded),
+                        _CircleIconButton(
+                          icon: Icons.arrow_forward_rounded,
+                          brightness: brightness,
+                          onTap: () => Navigator.of(context).pop(),
                         ),
                         const Spacer(),
                         ValueListenableBuilder<Set<int>>(
                           valueListenable: FavoritesService.instance.favorites,
                           builder: (context, favorites, _) {
                             final isFav = favorites.contains(reciter.id);
-                            return IconButton(
-                              onPressed: () =>
-                                  FavoritesService.instance.toggle(reciter.id),
-                              icon: Icon(
-                                isFav
-                                    ? Icons.favorite_rounded
-                                    : Icons.favorite_border_rounded,
-                                color: isFav ? AppColors.error : null,
-                              ),
+                            return _CircleIconButton(
+                              icon: isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                              brightness: brightness,
+                              iconColor: isFav ? AppColors.error : null,
+                              onTap: () => FavoritesService.instance.toggle(reciter.id),
                             );
                           },
                         ),
@@ -133,29 +128,52 @@ class _ReciterDetailScreenState extends State<ReciterDetailScreen> {
                           final selected = index == _selectedMoshafIndex;
                           final m = reciter.moshaf[index];
                           return GestureDetector(
-                            onTap: () =>
-                                setState(() => _selectedMoshafIndex = index),
+                            onTap: () => setState(() => _selectedMoshafIndex = index),
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 220),
                               curve: Curves.easeOut,
-                              padding: EdgeInsets.symmetric(horizontal: 16.w),
+                              padding: EdgeInsets.symmetric(horizontal: 14.w),
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
-                                color: selected
-                                    ? AppColors.primary
-                                    : AppColors.glassFill(brightness),
+                                gradient: selected
+                                    ? const LinearGradient(colors: [
+                                        AppColors.primaryLight,
+                                        AppColors.primary,
+                                      ])
+                                    : null,
+                                color: selected ? null : AppColors.glassFill(brightness),
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
                                   color: selected
                                       ? AppColors.primary
                                       : AppColors.glassBorder(brightness),
                                 ),
+                                boxShadow: selected
+                                    ? [
+                                        BoxShadow(
+                                          color: AppColors.primary.withOpacity(0.28),
+                                          blurRadius: 12,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ]
+                                    : null,
                               ),
-                              child: Text(
-                                m.name,
-                                style: AppTypography.label(brightness).copyWith(
-                                  color: selected ? Colors.white : null,
-                                ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    MoshafStyle.iconFor(m.name),
+                                    size: 15.sp,
+                                    color: selected ? Colors.white : AppColors.accentGoldSoft,
+                                  ),
+                                  SizedBox(width: 6.w),
+                                  Text(
+                                    m.name,
+                                    style: AppTypography.label(brightness).copyWith(
+                                      color: selected ? Colors.white : null,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           );
@@ -169,8 +187,7 @@ class _ReciterDetailScreenState extends State<ReciterDetailScreen> {
                     child: Padding(
                       padding: EdgeInsets.all(32.w),
                       child: Center(
-                        child: Text('لا توجد سور متاحة لهذه الرواية',
-                            style: AppTypography.body(brightness)),
+                        child: Text('لا توجد سور متاحة لهذه الرواية', style: AppTypography.body(brightness)),
                       ),
                     ),
                   )
@@ -205,6 +222,38 @@ class _ReciterDetailScreenState extends State<ReciterDetailScreen> {
   }
 }
 
+/// زرار دائري بخلفية زجاجية، بديل أنيق لأيقونات AppBar التقليدية.
+class _CircleIconButton extends StatelessWidget {
+  final IconData icon;
+  final Brightness brightness;
+  final VoidCallback onTap;
+  final Color? iconColor;
+
+  const _CircleIconButton({
+    required this.icon,
+    required this.brightness,
+    required this.onTap,
+    this.iconColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 40.w,
+        height: 40.w,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: AppColors.glassFill(brightness),
+          border: Border.all(color: AppColors.glassBorder(brightness)),
+        ),
+        child: Icon(icon, size: 20.sp, color: iconColor),
+      ),
+    );
+  }
+}
+
 class _SurahRow extends StatelessWidget {
   final ReciterModel reciter;
   final MoshafModel moshaf;
@@ -218,8 +267,7 @@ class _SurahRow extends StatelessWidget {
     required this.onTap,
   });
 
-  QueueItem get _item => QueueItem.fromReciter(
-      reciter: reciter, moshaf: moshaf, surahNumber: surahNumber);
+  QueueItem get _item => QueueItem.fromReciter(reciter: reciter, moshaf: moshaf, surahNumber: surahNumber);
 
   @override
   Widget build(BuildContext context) {
@@ -228,15 +276,13 @@ class _SurahRow extends StatelessWidget {
     final item = _item;
 
     return BlocBuilder<PlayerCubit, PlayerState>(
-      buildWhen: (prev, curr) =>
-          prev.currentItem != curr.currentItem ||
-          prev.isPlaying != curr.isPlaying,
+      buildWhen: (prev, curr) => prev.currentItem != curr.currentItem || prev.isPlaying != curr.isPlaying,
       builder: (context, playerState) {
         final isCurrent = playerState.currentItem == item;
 
         return Material(
           color: isCurrent
-              ? AppColors.primary.withValues(alpha: 0.14)
+              ? AppColors.primary.withOpacity(0.14)
               : AppColors.glassFill(brightness),
           borderRadius: BorderRadius.circular(16),
           child: InkWell(
@@ -254,7 +300,7 @@ class _SurahRow extends StatelessWidget {
                       shape: BoxShape.circle,
                       color: isCurrent
                           ? AppColors.primary
-                          : AppColors.primary.withValues(alpha: 0.12),
+                          : AppColors.primary.withOpacity(0.12),
                     ),
                     child: Text(
                       '$surahNumber',
@@ -269,20 +315,34 @@ class _SurahRow extends StatelessWidget {
                     child: Text(
                       surah.arabicName,
                       style: AppTypography.body(brightness).copyWith(
-                        fontWeight:
-                            isCurrent ? FontWeight.w700 : FontWeight.w400,
+                        fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w400,
                         color: isCurrent ? AppColors.primary : null,
                       ),
                     ),
                   ),
                   _DownloadButton(item: item),
                   SizedBox(width: 4.w),
-                  Icon(
-                    isCurrent && playerState.isPlaying
-                        ? Icons.pause_circle_filled_rounded
-                        : Icons.play_circle_outline_rounded,
-                    color: AppColors.primary,
-                    size: 26.sp,
+                  Container(
+                    width: 34.w,
+                    height: 34.w,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: isCurrent
+                            ? [AppColors.primaryLight, AppColors.primary]
+                            : [
+                                AppColors.primary.withOpacity(0.16),
+                                AppColors.primary.withOpacity(0.16),
+                              ],
+                      ),
+                    ),
+                    child: Icon(
+                      isCurrent && playerState.isPlaying
+                          ? Icons.pause_rounded
+                          : Icons.play_arrow_rounded,
+                      color: isCurrent ? Colors.white : AppColors.primary,
+                      size: 18.sp,
+                    ),
                   ),
                 ],
               ),
@@ -310,8 +370,7 @@ class _DownloadButton extends StatelessWidget {
         if (downloaded) {
           return IconButton(
             onPressed: () => DownloadService.instance.deleteDownload(item.key),
-            icon: Icon(Icons.download_done_rounded,
-                color: AppColors.success, size: 20.sp),
+            icon: Icon(Icons.download_done_rounded, color: AppColors.success, size: 20.sp),
             tooltip: 'محمّلة - اضغط للحذف',
           );
         }
@@ -332,8 +391,7 @@ class _DownloadButton extends StatelessWidget {
         }
 
         return IconButton(
-          onPressed: () =>
-              DownloadService.instance.download(item.key, item.audioUrl),
+          onPressed: () => DownloadService.instance.download(item.key, item.audioUrl),
           icon: Icon(Icons.download_rounded, size: 20.sp),
           tooltip: 'تحميل للاستماع بدون نت',
         );

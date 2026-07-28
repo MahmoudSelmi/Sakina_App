@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'core/storage/local_storage.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_controller.dart';
 import 'features/downloads/data/download_service.dart';
 import 'features/favorites/data/favorites_service.dart';
 import 'features/reciters/data/datasources/reciters_remote_data_source.dart';
@@ -35,20 +36,25 @@ class QuranPremiumApp extends StatelessWidget {
           providers: [
             BlocProvider<PlayerCubit>(create: (_) => PlayerCubit()),
           ],
-          child: MaterialApp(
-            title: 'قرآن بريميوم',
-            debugShowCheckedModeBanner: false,
-            theme: AppTheme.light,
-            darkTheme: AppTheme.dark,
-            themeMode: ThemeMode.system,
-            locale: const Locale('ar'),
-            localizationsDelegates: const [
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
-            supportedLocales: const [Locale('ar')],
-            home: HomeScreen(repository: repository),
+          child: ValueListenableBuilder<ThemeMode>(
+            valueListenable: ThemeController.instance,
+            builder: (context, themeMode, _) {
+              return MaterialApp(
+                title: 'جَنَّتَكَ',
+                debugShowCheckedModeBanner: false,
+                theme: AppTheme.light,
+                darkTheme: AppTheme.dark,
+                themeMode: themeMode,
+                locale: const Locale('ar'),
+                localizationsDelegates: const [
+                  GlobalMaterialLocalizations.delegate,
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                ],
+                supportedLocales: const [Locale('ar')],
+                home: HomeScreen(repository: repository),
+              );
+            },
           ),
         );
       },

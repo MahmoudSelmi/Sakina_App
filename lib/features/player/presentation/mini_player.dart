@@ -4,7 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../shared/widgets/glass_card.dart';
-import '../../../shared/widgets/reciter_avatar.dart';
+import '../../../shared/widgets/now_playing_visuals.dart';
 import '../cubit/player_cubit.dart';
 import '../cubit/player_state.dart';
 import 'full_player_screen.dart';
@@ -50,20 +50,35 @@ class MiniPlayer extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      ReciterAvatar(
+                      NowPlayingArt(
                         reciterId: item.reciterId,
                         letter: item.reciterName.isNotEmpty ? item.reciterName[0] : '؟',
-                        size: 44.w,
+                        size: 40.w,
+                        isPlaying: state.isPlaying,
                       ),
-                      SizedBox(width: 12.w),
+                      SizedBox(width: 14.w),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              item.surahArabicName,
-                              style: AppTypography.title(brightness),
-                              overflow: TextOverflow.ellipsis,
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    item.surahArabicName,
+                                    style: AppTypography.title(brightness),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                if (state.isPlaying) ...[
+                                  SizedBox(width: 8.w),
+                                  EqualizerBars(
+                                    isPlaying: state.isPlaying,
+                                    height: 12,
+                                    color: AppColors.primaryLight,
+                                  ),
+                                ],
+                              ],
                             ),
                             Text(
                               item.reciterName,
@@ -73,12 +88,23 @@ class MiniPlayer extends StatelessWidget {
                           ],
                         ),
                       ),
-                      IconButton(
-                        onPressed: () => context.read<PlayerCubit>().togglePlayPause(),
-                        icon: Icon(
-                          state.isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled,
-                          size: 36.sp,
-                          color: AppColors.primary,
+                      SizedBox(width: 6.w),
+                      GestureDetector(
+                        onTap: () => context.read<PlayerCubit>().togglePlayPause(),
+                        child: Container(
+                          width: 42.w,
+                          height: 42.w,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: [AppColors.primaryLight, AppColors.primary],
+                            ),
+                          ),
+                          child: Icon(
+                            state.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                            size: 24.sp,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                       IconButton(

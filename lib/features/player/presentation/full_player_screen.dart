@@ -1,17 +1,41 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart' hide RepeatMode;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../shared/widgets/reciter_avatar.dart';
+import '../../../shared/widgets/now_playing_visuals.dart';
 import '../../downloads/data/download_service.dart';
 import '../../favorites/data/favorites_service.dart';
 import '../cubit/player_cubit.dart';
 import '../cubit/player_state.dart';
 import '../data/queue_item.dart';
 
-class FullPlayerScreen extends StatelessWidget {
+class FullPlayerScreen extends StatefulWidget {
   const FullPlayerScreen({super.key});
+
+  @override
+  State<FullPlayerScreen> createState() => _FullPlayerScreenState();
+}
+
+class _FullPlayerScreenState extends State<FullPlayerScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _bgController;
+
+  @override
+  void initState() {
+    super.initState();
+    _bgController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 26),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _bgController.dispose();
+    super.dispose();
+  }
 
   String _formatDuration(Duration d) {
     final minutes = d.inMinutes.remainder(60).toString().padLeft(2, '0');
@@ -24,187 +48,213 @@ class FullPlayerScreen extends StatelessWidget {
     final brightness = Theme.of(context).brightness;
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: brightness == Brightness.dark
-                ? AppColors.heroGradientDark
-                : AppColors.heroGradientLight,
-          ),
-        ),
-        child: SafeArea(
-          child: BlocBuilder<PlayerCubit, PlayerState>(
-            builder: (context, state) {
-              final item = state.currentItem;
-              if (item == null) {
-                return const Center(child: Text('مفيش تشغيل حاليًا'));
-              }
-
-              final progress = state.duration.inMilliseconds == 0
-                  ? 0.0
-                  : state.position.inMilliseconds /
-                      state.duration.inMilliseconds;
-
-              return Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24.w),
-                child: Column(
-                  children: [
-                    SizedBox(height: 8.h),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(Icons.keyboard_arrow_down_rounded,
-                              size: 32),
-                        ),
-                        Text('قيد التشغيل',
-                            style: AppTypography.caption(brightness)),
-                        IconButton(
-                          onPressed: () {},
-                          icon: const Icon(Icons.more_horiz_rounded),
-                        ),
-                      ],
+      body: Stack(
+        children: [
+          // خلفية متحركة ببطء - بتدي إحساس "الشاشة حية" زي Now Playing
+          // في اسبوتيفاي، بدل الخلفية الثابتة.
+          Positioned.fill(
+            child: AnimatedBuilder(
+              animation: _bgController,
+              builder: (context, _) {
+                final t = _bgController.value * 2 * math.pi;
+                return DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin:
+                          Alignment(math.cos(t) * 0.6, -1 + math.sin(t) * 0.3),
+                      end: Alignment(-math.cos(t) * 0.6, 1 - math.sin(t) * 0.3),
+                      colors: brightness == Brightness.dark
+                          ? AppColors.heroGradientDark
+                          : AppColors.heroGradientLight,
                     ),
-                    const Spacer(),
-                    Container(
-                      width: 280.w,
-                      height: 280.w,
-                      decoration: BoxDecoration(
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.accentGold.withValues(alpha: 0.25),
-                            blurRadius: 40,
-                            spreadRadius: 4,
+                  ),
+                );
+              },
+            ),
+          ),
+          SafeArea(
+            child: BlocBuilder<PlayerCubit, PlayerState>(
+              builder: (context, state) {
+                final item = state.currentItem;
+                if (item == null) {
+                  return const Center(child: Text('مفيش تشغيل حاليًا'));
+                }
+
+                final progress = state.duration.inMilliseconds == 0
+                    ? 0.0
+                    : state.position.inMilliseconds /
+                        state.duration.inMilliseconds;
+
+                return Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24.w),
+                  child: Column(
+                    children: [
+                      SizedBox(height: 8.h),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _GlassIconButton(
+                            icon: Icons.keyboard_arrow_down_rounded,
+                            onTap: () => Navigator.of(context).pop(),
                           ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (state.isPlaying) ...[
+                                EqualizerBars(
+                                  isPlaying: state.isPlaying,
+                                  height: 12,
+                                  color: AppColors.accentGoldSoft,
+                                ),
+                                SizedBox(width: 8.w),
+                              ],
+                              Text('قيد التشغيل',
+                                  style: AppTypography.caption(brightness)),
+                            ],
+                          ),
+                          _GlassIconButton(
+                              icon: Icons.more_horiz_rounded, onTap: () {}),
                         ],
                       ),
-                      child: ReciterAvatar(
+                      const Spacer(),
+                      NowPlayingArt(
                         reciterId: item.reciterId,
                         letter: item.reciterName.isNotEmpty
                             ? item.reciterName[0]
                             : '؟',
-                        size: 280.w,
+                        size: 264.w,
+                        isPlaying: state.isPlaying,
                         heroTag: 'reciter-avatar-${item.reciterId}',
                       ),
-                    ),
-                    const Spacer(),
-                    Text(item.surahArabicName,
-                        style: AppTypography.displayLarge(brightness)),
-                    SizedBox(height: 6.h),
-                    Text(item.reciterName,
-                        style: AppTypography.body(brightness)),
-                    SizedBox(height: 24.h),
-                    SliderTheme(
-                      data: SliderTheme.of(context).copyWith(
-                        trackHeight: 3,
-                        thumbShape:
-                            const RoundSliderThumbShape(enabledThumbRadius: 6),
-                        overlayShape:
-                            const RoundSliderOverlayShape(overlayRadius: 14),
+                      const Spacer(),
+                      Text(item.surahArabicName,
+                          style: AppTypography.displayLarge(brightness)),
+                      SizedBox(height: 6.h),
+                      Text(item.reciterName,
+                          style: AppTypography.body(brightness)),
+                      SizedBox(height: 24.h),
+                      SliderTheme(
+                        data: SliderTheme.of(context).copyWith(
+                          trackHeight: 3,
+                          thumbShape: const RoundSliderThumbShape(
+                              enabledThumbRadius: 6),
+                          overlayShape:
+                              const RoundSliderOverlayShape(overlayRadius: 14),
+                        ),
+                        child: Slider(
+                          value: progress.clamp(0.0, 1.0),
+                          activeColor: AppColors.primary,
+                          inactiveColor: AppColors.glassBorder(brightness),
+                          onChanged: (value) {
+                            final target = state.duration * value;
+                            context.read<PlayerCubit>().seek(target);
+                          },
+                        ),
                       ),
-                      child: Slider(
-                        value: progress.clamp(0.0, 1.0),
-                        activeColor: AppColors.primary,
-                        inactiveColor: AppColors.glassBorder(brightness),
-                        onChanged: (value) {
-                          final target = state.duration * value;
-                          context.read<PlayerCubit>().seek(target);
-                        },
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(_formatDuration(state.position),
+                              style: AppTypography.caption(brightness)),
+                          Text(_formatDuration(state.duration),
+                              style: AppTypography.caption(brightness)),
+                        ],
                       ),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(_formatDuration(state.position),
-                            style: AppTypography.caption(brightness)),
-                        Text(_formatDuration(state.duration),
-                            style: AppTypography.caption(brightness)),
-                      ],
-                    ),
-                    SizedBox(height: 12.h),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          onPressed: () =>
-                              context.read<PlayerCubit>().toggleShuffle(),
-                          icon: Icon(
-                            Icons.shuffle_rounded,
-                            color: state.shuffle ? AppColors.primary : null,
+                      SizedBox(height: 12.h),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _GlassIconButton(
+                            icon: Icons.shuffle_rounded,
+                            size: 40,
+                            iconColor: state.shuffle ? AppColors.primary : null,
+                            onTap: () =>
+                                context.read<PlayerCubit>().toggleShuffle(),
                           ),
-                        ),
-                        IconButton(
-                          iconSize: 36,
-                          onPressed: () =>
-                              context.read<PlayerCubit>().playPrevious(),
-                          icon: const Icon(Icons.skip_previous_rounded),
-                        ),
-                        GestureDetector(
-                          onTap: () =>
-                              context.read<PlayerCubit>().togglePlayPause(),
-                          child: Container(
-                            width: 68.w,
-                            height: 68.w,
-                            decoration: const BoxDecoration(
-                              color: AppColors.primary,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              state.isPlaying
-                                  ? Icons.pause_rounded
-                                  : Icons.play_arrow_rounded,
-                              color: Colors.white,
-                              size: 36.sp,
+                          _GlassIconButton(
+                            icon: Icons.skip_previous_rounded,
+                            size: 48,
+                            iconSize: 26,
+                            onTap: () =>
+                                context.read<PlayerCubit>().playPrevious(),
+                          ),
+                          GestureDetector(
+                            onTap: () =>
+                                context.read<PlayerCubit>().togglePlayPause(),
+                            child: Container(
+                              width: 68.w,
+                              height: 68.w,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    AppColors.primaryLight,
+                                    AppColors.primary
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primary.withOpacity(0.4),
+                                    blurRadius: 20,
+                                    spreadRadius: 1,
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                state.isPlaying
+                                    ? Icons.pause_rounded
+                                    : Icons.play_arrow_rounded,
+                                color: Colors.white,
+                                size: 36.sp,
+                              ),
                             ),
                           ),
-                        ),
-                        IconButton(
-                          iconSize: 36,
-                          onPressed: () =>
-                              context.read<PlayerCubit>().playNext(),
-                          icon: const Icon(Icons.skip_next_rounded),
-                        ),
-                        IconButton(
-                          onPressed: () =>
-                              context.read<PlayerCubit>().cycleRepeatMode(),
-                          icon: Icon(
-                            state.repeatMode == RepeatMode.one
+                          _GlassIconButton(
+                            icon: Icons.skip_next_rounded,
+                            size: 48,
+                            iconSize: 26,
+                            onTap: () => context.read<PlayerCubit>().playNext(),
+                          ),
+                          _GlassIconButton(
+                            icon: state.repeatMode == RepeatMode.one
                                 ? Icons.repeat_one_rounded
                                 : Icons.repeat_rounded,
-                            color: state.repeatMode == RepeatMode.off
+                            size: 40,
+                            iconColor: state.repeatMode == RepeatMode.off
                                 ? null
                                 : AppColors.primary,
+                            onTap: () =>
+                                context.read<PlayerCubit>().cycleRepeatMode(),
                           ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 12.h),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _bottomAction(
-                            context, Icons.speed_rounded, '${state.speed}x',
-                            () {
-                          _showSpeedSheet(context);
-                        }),
-                        _bottomAction(
-                            context, Icons.bedtime_rounded, 'مؤقت النوم', () {
-                          _showSleepTimerSheet(context);
-                        }),
-                        _FavoriteBottomAction(reciterId: item.reciterId),
-                        _DownloadBottomAction(item: item),
-                      ],
-                    ),
-                    SizedBox(height: 16.h),
-                  ],
-                ),
-              );
-            },
+                        ],
+                      ),
+                      SizedBox(height: 12.h),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _bottomAction(
+                              context, Icons.speed_rounded, '${state.speed}x',
+                              () {
+                            _showSpeedSheet(context);
+                          }),
+                          _bottomAction(
+                              context, Icons.bedtime_rounded, 'مؤقت النوم', () {
+                            _showSleepTimerSheet(context);
+                          }),
+                          _FavoriteBottomAction(reciterId: item.reciterId),
+                          _DownloadBottomAction(item: item),
+                        ],
+                      ),
+                      SizedBox(height: 16.h),
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -264,6 +314,40 @@ class FullPlayerScreen extends StatelessWidget {
             );
           }).toList(),
         ),
+      ),
+    );
+  }
+}
+
+class _GlassIconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  final double size;
+  final double? iconSize;
+  final Color? iconColor;
+
+  const _GlassIconButton({
+    required this.icon,
+    required this.onTap,
+    this.size = 44,
+    this.iconSize,
+    this.iconColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: size.w,
+        height: size.w,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: AppColors.glassFill(brightness),
+          border: Border.all(color: AppColors.glassBorder(brightness)),
+        ),
+        child: Icon(icon, size: (iconSize ?? size * 0.5).sp, color: iconColor),
       ),
     );
   }
