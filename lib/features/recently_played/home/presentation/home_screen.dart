@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../core/theme/app_colors.dart';
@@ -12,10 +13,15 @@ import '../../../shared/widgets/page_transitions.dart';
 import '../../../shared/widgets/reciter_avatar.dart';
 import '../../../shared/widgets/staggered_fade_in.dart';
 import '../../favorites/data/favorites_service.dart';
+import '../../favorites/data/surah_favorites_service.dart';
+import '../../player/cubit/player_cubit.dart';
+import '../../player/data/queue_item.dart';
 import '../../player/presentation/mini_player.dart';
+import '../../recently_played/data/recently_played_service.dart';
 import '../../reciters/data/models/reciter_model.dart';
 import '../../reciters/domain/repositories/reciters_repository.dart';
 import '../../reciters/presentation/reciter_detail_screen.dart';
+import '../../surahs/presentation/surah_browse_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final RecitersRepository repository;
@@ -98,7 +104,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildContent(BuildContext context, Brightness brightness, List<ReciterModel> reciters) {
+  Widget _buildContent(BuildContext context, Brightness brightness,
+      List<ReciterModel> reciters) {
     final popular = reciters.take(12).toList();
 
     return ValueListenableBuilder<Set<int>>(
@@ -123,13 +130,17 @@ class _HomeScreenState extends State<HomeScreen> {
                       Row(
                         children: [
                           const Expanded(child: AppLogo()),
+                          _SurahBrowseButton(
+                              brightness: brightness, reciters: reciters),
+                          SizedBox(width: 8.w),
                           _ProfileButton(brightness: brightness),
                           SizedBox(width: 8.w),
                           _ThemeToggleButton(brightness: brightness),
                         ],
                       ),
                       SizedBox(height: 6.h),
-                      Text('استكمل رحلتك مع القرآن', style: AppTypography.body(brightness)),
+                      Text('استكمل رحلتك مع القرآن',
+                          style: AppTypography.body(brightness)),
                       SizedBox(height: 18.h),
                       _buildSearchBar(brightness),
                       SizedBox(height: 16.h),
@@ -142,7 +153,75 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             if (_tab == _HomeTab.all && _query.isEmpty) ...[
               SliverToBoxAdapter(
-                child: StaggeredFadeIn(index: 1, child: _sectionTitle(brightness, 'قراء مميزون')),
+                child: ValueListenableBuilder<List<QueueItem>>(
+                  valueListenable: RecentlyPlayedService.instance.items,
+                  builder: (context, recent, _) {
+                    if (recent.isEmpty) return const SizedBox.shrink();
+                    final items = recent.take(10).toList();
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        StaggeredFadeIn(
+                          index: 1,
+                          child: _sectionTitle(brightness, 'استكمل الاستماع'),
+                        ),
+                        SizedBox(
+                          height: 96.h,
+                          child: ListView.separated(
+                            padding: EdgeInsets.symmetric(horizontal: 20.w),
+                            scrollDirection: Axis.horizontal,
+                            itemCount: items.length,
+                            separatorBuilder: (_, __) => SizedBox(width: 12.w),
+                            itemBuilder: (context, index) => StaggeredFadeIn(
+                              index: index + 2,
+                              direction: Axis.horizontal,
+                              child: _ContinueListeningCard(item: items[index]),
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 24.h),
+                      ],
+                    );
+                  },
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: ValueListenableBuilder<Map<String, QueueItem>>(
+                  valueListenable: SurahFavoritesService.instance.favorites,
+                  builder: (context, favMap, _) {
+                    if (favMap.isEmpty) return const SizedBox.shrink();
+                    final items = favMap.values.toList();
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        StaggeredFadeIn(
+                          index: 1,
+                          child: _sectionTitle(brightness, 'سورك المفضلة'),
+                        ),
+                        SizedBox(
+                          height: 96.h,
+                          child: ListView.separated(
+                            padding: EdgeInsets.symmetric(horizontal: 20.w),
+                            scrollDirection: Axis.horizontal,
+                            itemCount: items.length,
+                            separatorBuilder: (_, __) => SizedBox(width: 12.w),
+                            itemBuilder: (context, index) => StaggeredFadeIn(
+                              index: index + 2,
+                              direction: Axis.horizontal,
+                              child: _ContinueListeningCard(
+                                  item: items[index], isFavoriteCard: true),
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 24.h),
+                      ],
+                    );
+                  },
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: StaggeredFadeIn(
+                    index: 1, child: _sectionTitle(brightness, 'قراء مميزون')),
               ),
               SliverToBoxAdapter(
                 child: SizedBox(
@@ -162,7 +241,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               SliverToBoxAdapter(child: SizedBox(height: 24.h)),
               SliverToBoxAdapter(
-                child: StaggeredFadeIn(index: 2, child: _sectionTitle(brightness, 'كل القراء')),
+                child: StaggeredFadeIn(
+                    index: 2, child: _sectionTitle(brightness, 'كل القراء')),
               ),
             ],
             if (filtered.isEmpty)
@@ -232,13 +312,15 @@ class _HomeScreenState extends State<HomeScreen> {
         color: AppColors.glassFill(brightness),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: _searchFocused ? AppColors.primaryLight : AppColors.glassBorder(brightness),
+          color: _searchFocused
+              ? AppColors.primaryLight
+              : AppColors.glassBorder(brightness),
           width: _searchFocused ? 1.4 : 1,
         ),
         boxShadow: _searchFocused
             ? [
                 BoxShadow(
-                  color: AppColors.primaryLight.withOpacity(0.18),
+                  color: AppColors.primaryLight.withValues(alpha: 0.18),
                   blurRadius: 16,
                   spreadRadius: 1,
                 ),
@@ -264,7 +346,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 border: InputBorder.none,
                 isDense: true,
                 hintText: 'دور على قارئ بالاسم...',
-                hintStyle: AppTypography.body(brightness).copyWith(color: secondary),
+                hintStyle:
+                    AppTypography.body(brightness).copyWith(color: secondary),
               ),
             ),
           ),
@@ -278,7 +361,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: EdgeInsets.all(3.w),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: secondary.withOpacity(0.15),
+                  color: secondary.withValues(alpha: 0.15),
                 ),
                 child: Icon(Icons.close_rounded, color: secondary, size: 15.sp),
               ),
@@ -371,8 +454,39 @@ class _HomeScreenState extends State<HomeScreen> {
           SizedBox(height: 12.h),
           Text('في مشكلة في الاتصال', style: AppTypography.body(brightness)),
           SizedBox(height: 12.h),
-          ElevatedButton(onPressed: _refresh, child: const Text('إعادة المحاولة')),
+          ElevatedButton(
+              onPressed: _refresh, child: const Text('إعادة المحاولة')),
         ],
+      ),
+    );
+  }
+}
+
+/// زرار "تصفح بالسورة" - بيودّي على شاشة اختيار السورة الأول ثم القارئ.
+class _SurahBrowseButton extends StatelessWidget {
+  final Brightness brightness;
+  final List<ReciterModel> reciters;
+
+  const _SurahBrowseButton({required this.brightness, required this.reciters});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.of(context)
+          .push(fadeScaleRoute(SurahBrowseScreen(reciters: reciters))),
+      child: Container(
+        width: 40.w,
+        height: 40.w,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: AppColors.glassFill(brightness),
+          border: Border.all(color: AppColors.glassBorder(brightness)),
+        ),
+        child: Icon(
+          Icons.menu_book_rounded,
+          size: 19.sp,
+          color: AppColors.accentGoldSoft,
+        ),
       ),
     );
   }
@@ -387,7 +501,8 @@ class _ProfileButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => Navigator.of(context).push(fadeScaleRoute(const AboutScreen())),
+      onTap: () =>
+          Navigator.of(context).push(fadeScaleRoute(const AboutScreen())),
       child: Container(
         width: 40.w,
         height: 40.w,
@@ -447,6 +562,70 @@ class _ThemeToggleButton extends StatelessWidget {
   }
 }
 
+/// كارت مصغّر بيتستخدم في شريطي "استكمل الاستماع" و"سورك المفضلة" - بيعرض
+/// السورة والقارئ وبيشغّلها فورًا لما تدوس عليه.
+class _ContinueListeningCard extends StatelessWidget {
+  final QueueItem item;
+  final bool isFavoriteCard;
+
+  const _ContinueListeningCard(
+      {required this.item, this.isFavoriteCard = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+
+    return GestureDetector(
+      onTap: () => context.read<PlayerCubit>().playSingle(item),
+      child: Container(
+        width: 220.w,
+        padding: EdgeInsets.all(10.w),
+        decoration: BoxDecoration(
+          color: AppColors.glassFill(brightness),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppColors.glassBorder(brightness)),
+        ),
+        child: Row(
+          children: [
+            ReciterAvatar(
+              reciterId: item.reciterId,
+              letter: item.reciterName.isNotEmpty ? item.reciterName[0] : '؟',
+              size: 52.w,
+            ),
+            SizedBox(width: 10.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    item.surahArabicName,
+                    style: AppTypography.body(brightness)
+                        .copyWith(fontWeight: FontWeight.w700),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    item.reciterName,
+                    style: AppTypography.caption(brightness),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              isFavoriteCard
+                  ? Icons.favorite_rounded
+                  : Icons.play_circle_fill_rounded,
+              color: isFavoriteCard ? AppColors.error : AppColors.primary,
+              size: 22.sp,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// كارت القارئ في سلايدر "قراء مميزون" - فيه حركة ضغط بسيطة (scale) بتدي
 /// إحساس تفاعلي حقيقي.
 class _ReciterFeatureCard extends StatefulWidget {
@@ -462,7 +641,8 @@ class _ReciterFeatureCardState extends State<_ReciterFeatureCard> {
   double _scale = 1.0;
 
   void _open(BuildContext context) {
-    Navigator.of(context).push(fadeScaleRoute(ReciterDetailScreen(reciter: widget.reciter)));
+    Navigator.of(context)
+        .push(fadeScaleRoute(ReciterDetailScreen(reciter: widget.reciter)));
   }
 
   @override
@@ -497,7 +677,8 @@ class _ReciterFeatureCardState extends State<_ReciterFeatureCard> {
               SizedBox(height: 10.h),
               Text(
                 reciter.name,
-                style: AppTypography.caption(brightness).copyWith(fontWeight: FontWeight.w600),
+                style: AppTypography.caption(brightness)
+                    .copyWith(fontWeight: FontWeight.w600),
                 maxLines: 2,
                 textAlign: TextAlign.center,
                 overflow: TextOverflow.ellipsis,
@@ -538,16 +719,20 @@ class _ReciterListTile extends StatelessWidget {
               ),
               SizedBox(width: 12.w),
               Expanded(
-                child: Text(reciter.name, style: AppTypography.body(brightness)),
+                child:
+                    Text(reciter.name, style: AppTypography.body(brightness)),
               ),
               ValueListenableBuilder<Set<int>>(
                 valueListenable: FavoritesService.instance.favorites,
                 builder: (context, favorites, _) {
                   final isFav = favorites.contains(reciter.id);
                   return IconButton(
-                    onPressed: () => FavoritesService.instance.toggle(reciter.id),
+                    onPressed: () =>
+                        FavoritesService.instance.toggle(reciter.id),
                     icon: Icon(
-                      isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                      isFav
+                          ? Icons.favorite_rounded
+                          : Icons.favorite_border_rounded,
                       color: isFav
                           ? AppColors.error
                           : (brightness == Brightness.dark
@@ -558,7 +743,8 @@ class _ReciterListTile extends StatelessWidget {
                   );
                 },
               ),
-              Icon(Icons.chevron_left_rounded, color: AppColors.primary, size: 24.sp),
+              Icon(Icons.chevron_left_rounded,
+                  color: AppColors.primary, size: 24.sp),
             ],
           ),
         ),

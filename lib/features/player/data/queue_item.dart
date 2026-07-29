@@ -55,6 +55,22 @@ class QueueItem {
         surahNumber: json['surahNumber'] as int,
       );
 
+  /// ترميز نصي مضغوط (يُستخدم في التخزين المحلي لقوائم مثل "آخر استماع"
+  /// و"السور المفضلة" و"قائمة الانتظار المحفوظة").
+  static String encode(QueueItem item) =>
+      '${item.reciterId}|${item.reciterName}|${item.moshafId}|${item.moshafServer}|${item.surahNumber}';
+
+  static QueueItem decode(String raw) {
+    final parts = raw.split('|');
+    return QueueItem(
+      reciterId: int.parse(parts[0]),
+      reciterName: parts[1],
+      moshafId: int.parse(parts[2]),
+      moshafServer: parts[3],
+      surahNumber: int.parse(parts[4]),
+    );
+  }
+
   @override
   bool operator ==(Object other) =>
       other is QueueItem &&

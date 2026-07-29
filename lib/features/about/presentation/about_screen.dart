@@ -66,7 +66,8 @@ class AboutScreen extends StatelessWidget {
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.accentGold.withOpacity(0.35),
+                              color:
+                                  AppColors.accentGold.withValues(alpha: 0.35),
                               blurRadius: 26,
                               spreadRadius: 1,
                             ),
@@ -75,7 +76,7 @@ class AboutScreen extends StatelessWidget {
                         child: Icon(
                           Icons.code_rounded,
                           size: 42.sp,
-                          color: Colors.black.withOpacity(0.8),
+                          color: Colors.black.withValues(alpha: 0.8),
                         ),
                       ),
                       SizedBox(height: 16.h),
@@ -248,7 +249,7 @@ class _SocialTile extends StatelessWidget {
                 height: 44.w,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: iconColor.withOpacity(0.15),
+                  color: iconColor.withValues(alpha: 0.15),
                 ),
                 child: Icon(icon, color: iconColor, size: 22.sp),
               ),

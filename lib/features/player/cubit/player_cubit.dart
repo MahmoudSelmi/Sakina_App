@@ -1,15 +1,19 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math';
+import 'package:audio_service/audio_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:just_audio/just_audio.dart' hide PlayerState;
 import '../../../core/storage/local_storage.dart';
 import '../../downloads/data/download_service.dart';
+import '../../recently_played/data/recently_played_service.dart';
+import '../data/audio_player_handler.dart';
 import '../data/queue_item.dart';
 import 'player_state.dart';
 
 class PlayerCubit extends Cubit<PlayerState> {
-  final AudioPlayer _audioPlayer = AudioPlayer();
+  final AudioPlayerHandler _handler;
+  AudioPlayer get _audioPlayer => _handler.player;
   final LocalStorage _storage = LocalStorage.instance;
 
   StreamSubscription<Duration>? _positionSub;
@@ -18,11 +22,14 @@ class PlayerCubit extends Cubit<PlayerState> {
   Timer? _persistTimer;
   Timer? _sleepTimer;
 
-  PlayerCubit() : super(const PlayerState()) {
+  PlayerCubit(this._handler) : super(const PlayerState()) {
     _init();
   }
 
   Future<void> _init() async {
+    _handler.onSkipNext = playNext;
+    _handler.onSkipPrevious = playPrevious;
+
     _positionSub = _audioPlayer.positionStream.listen((pos) {
       emit(state.copyWith(position: pos));
     });
@@ -61,10 +68,7 @@ class PlayerCubit extends Cubit<PlayerState> {
     if (lastReciterId == null || lastSurah == null) return;
 
     try {
-      final queue = queueRaw
-          .map((e) => QueueItem.fromJson(
-              Map<String, dynamic>.from((e.isNotEmpty) ? _decode(e) : {})))
-          .toList();
+      final queue = queueRaw.map((e) => QueueItem.decode(e)).toList();
 
       final index = queue.indexWhere(
         (q) => q.reciterId == lastReciterId && q.surahNumber == lastSurah,
@@ -75,24 +79,11 @@ class PlayerCubit extends Cubit<PlayerState> {
       emit(state.copyWith(queue: queue, currentIndex: index));
       await _loadCurrent(
           autoPlay: false, seekTo: Duration(milliseconds: lastPositionMs));
+      _broadcastQueue();
     } catch (_) {
       // جلسة تالفة، بنتجاهلها ونبدأ عادي
     }
   }
-
-  Map<String, dynamic> _decode(String raw) {
-    final parts = raw.split('|');
-    return {
-      'reciterId': int.parse(parts[0]),
-      'reciterName': parts[1],
-      'moshafId': int.parse(parts[2]),
-      'moshafServer': parts[3],
-      'surahNumber': int.parse(parts[4]),
-    };
-  }
-
-  String _encode(QueueItem item) =>
-      '${item.reciterId}|${item.reciterName}|${item.moshafId}|${item.moshafServer}|${item.surahNumber}';
 
   Future<void> playQueue(List<QueueItem> queue,
       {required int startIndex}) async {
@@ -103,9 +94,18 @@ class PlayerCubit extends Cubit<PlayerState> {
     ));
     await _saveQueue();
     await _loadCurrent(autoPlay: true);
+    _broadcastQueue();
   }
 
   Future<void> playSingle(QueueItem item) => playQueue([item], startIndex: 0);
+
+  /// بينقل التشغيل لعنصر معين جوه نفس قائمة الانتظار الحالية (بيتستخدم من
+  /// شاشة "قائمة الانتظار" لما المستخدم يدوس على سورة تانية في القائمة).
+  Future<void> jumpToQueueIndex(int index) async {
+    if (index < 0 || index >= state.queue.length) return;
+    emit(state.copyWith(currentIndex: index));
+    await _loadCurrent(autoPlay: true);
+  }
 
   Future<void> _loadCurrent({required bool autoPlay, Duration? seekTo}) async {
     final item = state.currentItem;
@@ -127,6 +127,7 @@ class PlayerCubit extends Cubit<PlayerState> {
       if (autoPlay) {
         await _audioPlayer.play();
       }
+      _handler.setCurrentMediaItem(_toMediaItem(item));
       _storage.setInt(StorageKeys.lastReciterId, item.reciterId);
       _storage.setInt(StorageKeys.lastMoshafId, item.moshafId);
       _storage.setInt(StorageKeys.lastSurahNumber, item.surahNumber);
@@ -135,6 +136,20 @@ class PlayerCubit extends Cubit<PlayerState> {
       emit(state.copyWith(
           status: PlayerStatus.error, errorMessage: 'تعذر تشغيل السورة'));
     }
+  }
+
+  MediaItem _toMediaItem(QueueItem item) {
+    return MediaItem(
+      id: item.key,
+      album: 'جَنَّتَكَ',
+      title: item.surahArabicName,
+      artist: item.reciterName,
+      artUri: Uri.parse('asset:///assets/branding/app_notification_art.png'),
+    );
+  }
+
+  void _broadcastQueue() {
+    _handler.queue.add(state.queue.map(_toMediaItem).toList());
   }
 
   Future<void> togglePlayPause() async {
@@ -224,7 +239,7 @@ class PlayerCubit extends Cubit<PlayerState> {
   }
 
   Future<void> _saveQueue() async {
-    final encoded = state.queue.map(_encode).toList();
+    final encoded = state.queue.map(QueueItem.encode).toList();
     await _storage.setStringList(StorageKeys.playQueue, encoded);
   }
 
@@ -235,12 +250,7 @@ class PlayerCubit extends Cubit<PlayerState> {
   }
 
   Future<void> _addToRecentlyPlayed(QueueItem item) async {
-    final recent = _storage.getStringList(StorageKeys.recentlyPlayed);
-    final encoded = _encode(item);
-    recent.removeWhere((e) => e.startsWith('${item.reciterId}|'));
-    recent.insert(0, encoded);
-    final trimmed = recent.take(30).toList();
-    await _storage.setStringList(StorageKeys.recentlyPlayed, trimmed);
+    await RecentlyPlayedService.instance.add(item);
   }
 
   @override
@@ -250,7 +260,7 @@ class PlayerCubit extends Cubit<PlayerState> {
     _playerStateSub?.cancel();
     _persistTimer?.cancel();
     _sleepTimer?.cancel();
-    await _audioPlayer.dispose();
+    await _handler.dispose();
     return super.close();
   }
 }

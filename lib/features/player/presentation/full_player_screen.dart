@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart' hide RepeatMode;
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/theme/app_colors.dart';
@@ -10,6 +11,7 @@ import '../../favorites/data/favorites_service.dart';
 import '../cubit/player_cubit.dart';
 import '../cubit/player_state.dart';
 import '../data/queue_item.dart';
+import 'queue_sheet.dart';
 
 class FullPlayerScreen extends StatefulWidget {
   const FullPlayerScreen({super.key});
@@ -21,6 +23,10 @@ class FullPlayerScreen extends StatefulWidget {
 class _FullPlayerScreenState extends State<FullPlayerScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _bgController;
+
+  // لسحب الشاشة لتحت وقفلها، زي أي مشغل احترافي.
+  double _dragExtent = 0;
+  bool _dragging = false;
 
   @override
   void initState() {
@@ -73,185 +79,241 @@ class _FullPlayerScreenState extends State<FullPlayerScreen>
             ),
           ),
           SafeArea(
-            child: BlocBuilder<PlayerCubit, PlayerState>(
-              builder: (context, state) {
-                final item = state.currentItem;
-                if (item == null) {
-                  return const Center(child: Text('مفيش تشغيل حاليًا'));
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onVerticalDragUpdate: (details) {
+                final height = MediaQuery.of(context).size.height;
+                setState(() {
+                  _dragging = true;
+                  _dragExtent =
+                      (_dragExtent + details.delta.dy / height).clamp(0.0, 1.0);
+                });
+              },
+              onVerticalDragEnd: (details) {
+                final velocity = details.primaryVelocity ?? 0;
+                if (_dragExtent > 0.22 || velocity > 700) {
+                  Navigator.of(context).maybePop();
+                  return;
                 }
+                setState(() {
+                  _dragging = false;
+                  _dragExtent = 0;
+                });
+              },
+              child: AnimatedSlide(
+                offset: Offset(0, _dragExtent),
+                duration: _dragging
+                    ? Duration.zero
+                    : const Duration(milliseconds: 260),
+                curve: Curves.easeOut,
+                child: AnimatedOpacity(
+                  opacity: 1 - (_dragExtent * 0.7),
+                  duration: _dragging
+                      ? Duration.zero
+                      : const Duration(milliseconds: 260),
+                  child: BlocBuilder<PlayerCubit, PlayerState>(
+                    builder: (context, state) {
+                      final item = state.currentItem;
+                      if (item == null) {
+                        return const Center(child: Text('مفيش تشغيل حاليًا'));
+                      }
 
-                final progress = state.duration.inMilliseconds == 0
-                    ? 0.0
-                    : state.position.inMilliseconds /
-                        state.duration.inMilliseconds;
+                      final progress = state.duration.inMilliseconds == 0
+                          ? 0.0
+                          : state.position.inMilliseconds /
+                              state.duration.inMilliseconds;
 
-                return Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24.w),
-                  child: Column(
-                    children: [
-                      SizedBox(height: 8.h),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _GlassIconButton(
-                            icon: Icons.keyboard_arrow_down_rounded,
-                            onTap: () => Navigator.of(context).pop(),
-                          ),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (state.isPlaying) ...[
-                                EqualizerBars(
-                                  isPlaying: state.isPlaying,
-                                  height: 12,
-                                  color: AppColors.accentGoldSoft,
+                      return Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 24.w),
+                        child: Column(
+                          children: [
+                            SizedBox(height: 8.h),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                _GlassIconButton(
+                                  icon: Icons.keyboard_arrow_down_rounded,
+                                  onTap: () => Navigator.of(context).pop(),
                                 ),
-                                SizedBox(width: 8.w),
-                              ],
-                              Text('قيد التشغيل',
-                                  style: AppTypography.caption(brightness)),
-                            ],
-                          ),
-                          _GlassIconButton(
-                              icon: Icons.more_horiz_rounded, onTap: () {}),
-                        ],
-                      ),
-                      const Spacer(),
-                      NowPlayingArt(
-                        reciterId: item.reciterId,
-                        letter: item.reciterName.isNotEmpty
-                            ? item.reciterName[0]
-                            : '؟',
-                        size: 264.w,
-                        isPlaying: state.isPlaying,
-                        heroTag: 'reciter-avatar-${item.reciterId}',
-                      ),
-                      const Spacer(),
-                      Text(item.surahArabicName,
-                          style: AppTypography.displayLarge(brightness)),
-                      SizedBox(height: 6.h),
-                      Text(item.reciterName,
-                          style: AppTypography.body(brightness)),
-                      SizedBox(height: 24.h),
-                      SliderTheme(
-                        data: SliderTheme.of(context).copyWith(
-                          trackHeight: 3,
-                          thumbShape: const RoundSliderThumbShape(
-                              enabledThumbRadius: 6),
-                          overlayShape:
-                              const RoundSliderOverlayShape(overlayRadius: 14),
-                        ),
-                        child: Slider(
-                          value: progress.clamp(0.0, 1.0),
-                          activeColor: AppColors.primary,
-                          inactiveColor: AppColors.glassBorder(brightness),
-                          onChanged: (value) {
-                            final target = state.duration * value;
-                            context.read<PlayerCubit>().seek(target);
-                          },
-                        ),
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(_formatDuration(state.position),
-                              style: AppTypography.caption(brightness)),
-                          Text(_formatDuration(state.duration),
-                              style: AppTypography.caption(brightness)),
-                        ],
-                      ),
-                      SizedBox(height: 12.h),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _GlassIconButton(
-                            icon: Icons.shuffle_rounded,
-                            size: 40,
-                            iconColor: state.shuffle ? AppColors.primary : null,
-                            onTap: () =>
-                                context.read<PlayerCubit>().toggleShuffle(),
-                          ),
-                          _GlassIconButton(
-                            icon: Icons.skip_previous_rounded,
-                            size: 48,
-                            iconSize: 26,
-                            onTap: () =>
-                                context.read<PlayerCubit>().playPrevious(),
-                          ),
-                          GestureDetector(
-                            onTap: () =>
-                                context.read<PlayerCubit>().togglePlayPause(),
-                            child: Container(
-                              width: 68.w,
-                              height: 68.w,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    AppColors.primaryLight,
-                                    AppColors.primary
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (state.isPlaying) ...[
+                                      EqualizerBars(
+                                        isPlaying: state.isPlaying,
+                                        height: 12,
+                                        color: AppColors.accentGoldSoft,
+                                      ),
+                                      SizedBox(width: 8.w),
+                                    ],
+                                    Text('قيد التشغيل',
+                                        style:
+                                            AppTypography.caption(brightness)),
                                   ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
                                 ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppColors.primary.withOpacity(0.4),
-                                    blurRadius: 20,
-                                    spreadRadius: 1,
-                                  ),
-                                ],
+                                _GlassIconButton(
+                                  icon: Icons.queue_music_rounded,
+                                  onTap: () => QueueSheet.show(context),
+                                ),
+                              ],
+                            ),
+                            const Spacer(),
+                            NowPlayingArt(
+                              reciterId: item.reciterId,
+                              letter: item.reciterName.isNotEmpty
+                                  ? item.reciterName[0]
+                                  : '؟',
+                              size: 264.w,
+                              isPlaying: state.isPlaying,
+                              heroTag: 'reciter-avatar-${item.reciterId}',
+                            ),
+                            const Spacer(),
+                            Text(item.surahArabicName,
+                                style: AppTypography.displayLarge(brightness)),
+                            SizedBox(height: 6.h),
+                            Text(item.reciterName,
+                                style: AppTypography.body(brightness)),
+                            SizedBox(height: 24.h),
+                            SliderTheme(
+                              data: SliderTheme.of(context).copyWith(
+                                trackHeight: 3,
+                                thumbShape: const RoundSliderThumbShape(
+                                    enabledThumbRadius: 6),
+                                overlayShape: const RoundSliderOverlayShape(
+                                    overlayRadius: 14),
                               ),
-                              child: Icon(
-                                state.isPlaying
-                                    ? Icons.pause_rounded
-                                    : Icons.play_arrow_rounded,
-                                color: Colors.white,
-                                size: 36.sp,
+                              child: Slider(
+                                value: progress.clamp(0.0, 1.0),
+                                activeColor: AppColors.primary,
+                                inactiveColor:
+                                    AppColors.glassBorder(brightness),
+                                onChanged: (value) {
+                                  final target = state.duration * value;
+                                  context.read<PlayerCubit>().seek(target);
+                                },
                               ),
                             ),
-                          ),
-                          _GlassIconButton(
-                            icon: Icons.skip_next_rounded,
-                            size: 48,
-                            iconSize: 26,
-                            onTap: () => context.read<PlayerCubit>().playNext(),
-                          ),
-                          _GlassIconButton(
-                            icon: state.repeatMode == RepeatMode.one
-                                ? Icons.repeat_one_rounded
-                                : Icons.repeat_rounded,
-                            size: 40,
-                            iconColor: state.repeatMode == RepeatMode.off
-                                ? null
-                                : AppColors.primary,
-                            onTap: () =>
-                                context.read<PlayerCubit>().cycleRepeatMode(),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 12.h),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _bottomAction(
-                              context, Icons.speed_rounded, '${state.speed}x',
-                              () {
-                            _showSpeedSheet(context);
-                          }),
-                          _bottomAction(
-                              context, Icons.bedtime_rounded, 'مؤقت النوم', () {
-                            _showSleepTimerSheet(context);
-                          }),
-                          _FavoriteBottomAction(reciterId: item.reciterId),
-                          _DownloadBottomAction(item: item),
-                        ],
-                      ),
-                      SizedBox(height: 16.h),
-                    ],
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(_formatDuration(state.position),
+                                    style: AppTypography.caption(brightness)),
+                                Text(_formatDuration(state.duration),
+                                    style: AppTypography.caption(brightness)),
+                              ],
+                            ),
+                            SizedBox(height: 12.h),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                _GlassIconButton(
+                                  icon: Icons.shuffle_rounded,
+                                  size: 40,
+                                  iconColor:
+                                      state.shuffle ? AppColors.primary : null,
+                                  onTap: () {
+                                    HapticFeedback.selectionClick();
+                                    context.read<PlayerCubit>().toggleShuffle();
+                                  },
+                                ),
+                                _GlassIconButton(
+                                  icon: Icons.skip_previous_rounded,
+                                  size: 48,
+                                  iconSize: 26,
+                                  onTap: () {
+                                    HapticFeedback.lightImpact();
+                                    context.read<PlayerCubit>().playPrevious();
+                                  },
+                                ),
+                                GestureDetector(
+                                  onTap: () {
+                                    HapticFeedback.mediumImpact();
+                                    context
+                                        .read<PlayerCubit>()
+                                        .togglePlayPause();
+                                  },
+                                  child: Container(
+                                    width: 68.w,
+                                    height: 68.w,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      gradient: const LinearGradient(
+                                        colors: [
+                                          AppColors.primaryLight,
+                                          AppColors.primary
+                                        ],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: AppColors.primary
+                                              .withValues(alpha: 0.4),
+                                          blurRadius: 20,
+                                          spreadRadius: 1,
+                                        ),
+                                      ],
+                                    ),
+                                    child: Icon(
+                                      state.isPlaying
+                                          ? Icons.pause_rounded
+                                          : Icons.play_arrow_rounded,
+                                      color: Colors.white,
+                                      size: 36.sp,
+                                    ),
+                                  ),
+                                ),
+                                _GlassIconButton(
+                                  icon: Icons.skip_next_rounded,
+                                  size: 48,
+                                  iconSize: 26,
+                                  onTap: () {
+                                    HapticFeedback.lightImpact();
+                                    context.read<PlayerCubit>().playNext();
+                                  },
+                                ),
+                                _GlassIconButton(
+                                  icon: state.repeatMode == RepeatMode.one
+                                      ? Icons.repeat_one_rounded
+                                      : Icons.repeat_rounded,
+                                  size: 40,
+                                  iconColor: state.repeatMode == RepeatMode.off
+                                      ? null
+                                      : AppColors.primary,
+                                  onTap: () {
+                                    HapticFeedback.selectionClick();
+                                    context
+                                        .read<PlayerCubit>()
+                                        .cycleRepeatMode();
+                                  },
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 12.h),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                _bottomAction(context, Icons.speed_rounded,
+                                    '${state.speed}x', () {
+                                  _showSpeedSheet(context);
+                                }),
+                                _bottomAction(context, Icons.bedtime_rounded,
+                                    'مؤقت النوم', () {
+                                  _showSleepTimerSheet(context);
+                                }),
+                                _FavoriteBottomAction(
+                                    reciterId: item.reciterId),
+                                _DownloadBottomAction(item: item),
+                              ],
+                            ),
+                            SizedBox(height: 16.h),
+                          ],
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
+                ),
+              ),
             ),
           ),
         ],

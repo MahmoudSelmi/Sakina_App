@@ -96,11 +96,11 @@ class _NowPlayingArtState extends State<NowPlayingArt>
             child: Container(
               width: haloSize,
               height: haloSize,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: SweepGradient(
                   colors: _haloColors,
-                  transform: const GradientRotation(-math.pi / 2),
+                  transform: GradientRotation(-math.pi / 2),
                 ),
               ),
               child: Center(
