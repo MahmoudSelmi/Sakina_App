@@ -27,7 +27,7 @@ class AppLogo extends StatelessWidget {
           height: iconSize.w,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            gradient: const LinearGradient(
+            gradient:  LinearGradient(
               colors: AppColors.goldGradient,
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -51,7 +51,7 @@ class AppLogo extends StatelessWidget {
         if (showWordmark) ...[
           SizedBox(width: 10.w),
           ShaderMask(
-            shaderCallback: (bounds) => const LinearGradient(
+            shaderCallback: (bounds) =>  LinearGradient(
               colors: AppColors.goldGradient,
             ).createShader(bounds),
             child: Text(

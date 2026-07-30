@@ -1,47 +1,38 @@
 import 'package:flutter/material.dart';
+import 'app_palette.dart';
 
+/// واجهة الألوان اللي بيستخدمها كل التطبيق. القيم هنا مش ثابتة - بترجع
+/// لون الثيم المفعّل حاليًا [_current]، فلما [setPalette] تتنادى (لما
+/// المستخدم يغيّر الثيم) كل مكان في التطبيق بيتلوّن صح تلقائيًا من غير
+/// ما نحتاج نعدّل أي شاشة تانية.
 class AppColors {
   AppColors._();
 
-  static const Color primary = Color(0xFF0F7A5C);
-  static const Color primaryLight = Color(0xFF2FAE85);
-  static const Color accentGold = Color(0xFFD4AF37);
-  static const Color accentGoldSoft = Color(0xFFE8C766);
+  static AppPalette _current = AppPalettes.midnightGold;
 
-  static const Color darkBg = Color(0xFF0A0E10);
-  static const Color darkSurface = Color(0xFF14191B);
-  static const Color darkSurfaceElevated = Color(0xFF1C2224);
-  static const Color darkCard = Color(0xFF1A2022);
+  static void setPalette(AppPalette palette) => _current = palette;
+  static AppPalette get currentPalette => _current;
 
-  static const Color lightBg = Color(0xFFF7F6F2);
-  static const Color lightSurface = Color(0xFFFFFFFF);
-  static const Color lightCard = Color(0xFFF1EFE9);
+  static Color get primary => _current.primary;
+  static Color get primaryLight => _current.primaryLight;
+  static Color get accentGold => _current.accentGold;
+  static Color get accentGoldSoft => _current.accentGoldSoft;
+  static Color get error => _current.error;
+  static Color get success => _current.success;
 
-  static const Color textPrimaryDark = Color(0xFFF5F5F0);
-  static const Color textSecondaryDark = Color(0xFFA3ACA9);
-  static const Color textPrimaryLight = Color(0xFF14191B);
-  static const Color textSecondaryLight = Color(0xFF5C6663);
+  static Color get darkSurfaceElevated => _current.surfaceElevated;
+  static Color get lightSurface => _current.surface;
 
-  static const Color error = Color(0xFFE0574B);
-  static const Color success = Color(0xFF3BA776);
+  static Color get textPrimaryDark => _current.textPrimary;
+  static Color get textPrimaryLight => _current.textPrimary;
+  static Color get textSecondaryDark => _current.textSecondary;
+  static Color get textSecondaryLight => _current.textSecondary;
 
-  static const List<Color> heroGradientDark = [
-    Color(0xFF0F2B22),
-    Color(0xFF0A0E10),
-  ];
+  static List<Color> get heroGradientDark => _current.heroGradient;
+  static List<Color> get heroGradientLight => _current.heroGradient;
 
-  static const List<Color> heroGradientLight = [
-    Color(0xFFE7F3EC),
-    Color(0xFFF7F6F2),
-  ];
+  static List<Color> get goldGradient => _current.goldGradient;
 
-  static const List<Color> goldGradient = [accentGoldSoft, accentGold];
-
-  static Color glassFill(Brightness b) =>
-      (b == Brightness.dark ? Colors.white : Colors.black)
-          .withValues(alpha: 0.06);
-
-  static Color glassBorder(Brightness b) =>
-      (b == Brightness.dark ? Colors.white : Colors.black)
-          .withValues(alpha: 0.10);
+  static Color glassFill(Brightness b) => _current.glassFill();
+  static Color glassBorder(Brightness b) => _current.glassBorder();
 }

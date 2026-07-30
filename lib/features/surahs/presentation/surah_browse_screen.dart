@@ -196,7 +196,7 @@ class _SurahTile extends StatelessWidget {
                 Container(
                   width: 36.w,
                   height: 36.w,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(colors: AppColors.goldGradient),
                   ),

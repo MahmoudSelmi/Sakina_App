@@ -5,8 +5,11 @@ import 'package:audio_service/audio_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:just_audio/just_audio.dart' hide PlayerState;
 import '../../../core/storage/local_storage.dart';
+import '../../../core/utils/notification_artwork_generator.dart';
 import '../../downloads/data/download_service.dart';
 import '../../recently_played/data/recently_played_service.dart';
+import '../../settings/data/settings_service.dart';
+import '../../settings/data/volume_boost_service.dart';
 import '../data/audio_player_handler.dart';
 import '../data/queue_item.dart';
 import 'player_state.dart';
@@ -22,11 +25,14 @@ class PlayerCubit extends Cubit<PlayerState> {
   Timer? _persistTimer;
   Timer? _sleepTimer;
 
-  PlayerCubit(this._handler) : super(const PlayerState()) {
+  PlayerCubit(this._handler)
+      : super(PlayerState(speed: SettingsService.instance.defaultSpeed.value)) {
     _init();
   }
 
   Future<void> _init() async {
+    // بربط أزرار "التالي/السابق" على شاشة القفل والإشعار بنفس منطق الـ
+    // queue الموجود هنا (بما فيه الشفل والتكرار).
     _handler.onSkipNext = playNext;
     _handler.onSkipPrevious = playPrevious;
 
@@ -36,6 +42,7 @@ class PlayerCubit extends Cubit<PlayerState> {
 
     _durationSub = _audioPlayer.durationStream.listen((dur) {
       emit(state.copyWith(duration: dur ?? Duration.zero));
+      if (dur != null) _handler.updateMediaItemDuration(dur);
     });
 
     _playerStateSub = _audioPlayer.playerStateStream.listen((s) {
@@ -124,10 +131,12 @@ class PlayerCubit extends Cubit<PlayerState> {
         await _audioPlayer.seek(seekTo);
       }
       await _audioPlayer.setSpeed(state.speed);
+      await _audioPlayer
+          .setVolume(VolumeBoostService.instance.getBoost(item.reciterId));
       if (autoPlay) {
         await _audioPlayer.play();
       }
-      _handler.setCurrentMediaItem(_toMediaItem(item));
+      _handler.setCurrentMediaItem(await _toMediaItem(item));
       _storage.setInt(StorageKeys.lastReciterId, item.reciterId);
       _storage.setInt(StorageKeys.lastMoshafId, item.moshafId);
       _storage.setInt(StorageKeys.lastSurahNumber, item.surahNumber);
@@ -138,18 +147,25 @@ class PlayerCubit extends Cubit<PlayerState> {
     }
   }
 
-  MediaItem _toMediaItem(QueueItem item) {
+  Future<MediaItem> _toMediaItem(QueueItem item) async {
+    final artUri = await NotificationArtworkGenerator.generate(
+          reciterId: item.reciterId,
+          letter: item.reciterName.isNotEmpty ? item.reciterName[0] : '؟',
+        ) ??
+        Uri.parse('asset:///assets/branding/app_notification_art.png');
+
     return MediaItem(
       id: item.key,
       album: 'جَنَّتَكَ',
       title: item.surahArabicName,
       artist: item.reciterName,
-      artUri: Uri.parse('asset:///assets/branding/app_notification_art.png'),
+      artUri: artUri,
     );
   }
 
-  void _broadcastQueue() {
-    _handler.queue.add(state.queue.map(_toMediaItem).toList());
+  Future<void> _broadcastQueue() async {
+    final items = await Future.wait(state.queue.map(_toMediaItem));
+    _handler.queue.add(items);
   }
 
   Future<void> togglePlayPause() async {
@@ -214,6 +230,15 @@ class PlayerCubit extends Cubit<PlayerState> {
   }
 
   void toggleShuffle() => emit(state.copyWith(shuffle: !state.shuffle));
+
+  /// بيظبط مستوى صوت القارئ الحالي (لمعادلة الفرق بين تسجيلات القراء
+  /// المختلفة) وبيطبّقه فورًا وبيفتكره للمرات الجاية.
+  Future<void> setVolumeBoostForCurrentReciter(double value) async {
+    final item = state.currentItem;
+    if (item == null) return;
+    await VolumeBoostService.instance.setBoost(item.reciterId, value);
+    await _audioPlayer.setVolume(value);
+  }
 
   void cycleRepeatMode() {
     final next = switch (state.repeatMode) {

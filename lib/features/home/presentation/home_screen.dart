@@ -5,23 +5,37 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/constants/surah_data.dart';
+import '../../../core/services/connectivity_service.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../core/utils/arabic_text.dart';
+import '../../../core/utils/mood_playlist_builder.dart';
 import '../../../shared/widgets/app_logo.dart';
-import '../../about/presentation/about_screen.dart';
+import '../../../shared/widgets/reassurance_banner.dart';
+import '../../../shared/widgets/theme_picker_sheet.dart';
+import '../../presentation/about_screen.dart';
 import '../../../shared/widgets/page_transitions.dart';
 import '../../../shared/widgets/reciter_avatar.dart';
 import '../../../shared/widgets/staggered_fade_in.dart';
+import '../../downloads/presentation/downloads_screen.dart';
 import '../../favorites/data/favorites_service.dart';
 import '../../favorites/data/surah_favorites_service.dart';
+import '../../moods/presentation/mood_screen.dart';
 import '../../player/cubit/player_cubit.dart';
+import '../../player/cubit/player_state.dart';
 import '../../player/data/queue_item.dart';
 import '../../player/presentation/mini_player.dart';
+import '../../playlists/data/playlist_model.dart';
+import '../../playlists/data/playlists_service.dart';
+import '../../playlists/presentation/playlist_detail_screen.dart';
+import '../../playlists/presentation/playlists_screen.dart';
 import '../../recently_played/data/recently_played_service.dart';
+import '../../settings/presentation/settings_screen.dart';
 import '../../reciters/data/models/reciter_model.dart';
 import '../../reciters/domain/repositories/reciters_repository.dart';
 import '../../reciters/presentation/reciter_detail_screen.dart';
 import '../../surahs/presentation/surah_browse_screen.dart';
+import '../../surahs/presentation/surah_reciters_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final RecitersRepository repository;
@@ -41,6 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Timer? _debounce;
   String _query = '';
   bool _searchFocused = false;
+  bool _showReassurance = true;
   _HomeTab _tab = _HomeTab.all;
 
   @override
@@ -98,6 +113,56 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const Positioned(left: 0, right: 0, bottom: 8, child: MiniPlayer()),
+            ValueListenableBuilder<bool>(
+              valueListenable: ConnectivityService.instance.isOnline,
+              builder: (context, online, _) {
+                if (online) return const SizedBox.shrink();
+                return Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: SafeArea(
+                    bottom: false,
+                    child: Container(
+                      margin:
+                          EdgeInsets.symmetric(horizontal: 20.w, vertical: 6.h),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+                      decoration: BoxDecoration(
+                        color: AppColors.error.withValues(alpha: 0.92),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.wifi_off_rounded,
+                              color: Colors.white, size: 16),
+                          SizedBox(width: 8.w),
+                          Text('مفيش اتصال بالإنترنت دلوقتي',
+                              style: AppTypography.caption(brightness)
+                                  .copyWith(color: Colors.white)),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            if (_showReassurance)
+              BlocBuilder<PlayerCubit, PlayerState>(
+                buildWhen: (prev, curr) => prev.currentItem != curr.currentItem,
+                builder: (context, playerState) {
+                  final hasMiniPlayer = playerState.currentItem != null;
+                  return Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: hasMiniPlayer ? 88.h : 8.h,
+                    child: ReassuranceBanner(
+                      onDismiss: () => setState(() => _showReassurance = false),
+                    ),
+                  );
+                },
+              ),
           ],
         ),
       ),
@@ -143,6 +208,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: AppTypography.body(brightness)),
                       SizedBox(height: 18.h),
                       _buildSearchBar(brightness),
+                      SizedBox(height: 14.h),
+                      _buildQuickAccessRow(brightness, reciters),
                       SizedBox(height: 16.h),
                       _buildTabSwitch(brightness, favoriteIds.length),
                       SizedBox(height: 20.h),
@@ -152,6 +219,32 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             if (_tab == _HomeTab.all && _query.isEmpty) ...[
+              SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    StaggeredFadeIn(
+                        index: 1,
+                        child: _sectionTitle(brightness, 'أجواء تناسبك')),
+                    SizedBox(
+                      height: 108.h,
+                      child: ListView.separated(
+                        padding: EdgeInsets.symmetric(horizontal: 20.w),
+                        scrollDirection: Axis.horizontal,
+                        itemCount: Mood.values.length,
+                        separatorBuilder: (_, __) => SizedBox(width: 12.w),
+                        itemBuilder: (context, index) => StaggeredFadeIn(
+                          index: index + 2,
+                          direction: Axis.horizontal,
+                          child: _MoodCard(
+                              mood: Mood.values[index], reciters: reciters),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 24.h),
+                  ],
+                ),
+              ),
               SliverToBoxAdapter(
                 child: ValueListenableBuilder<List<QueueItem>>(
                   valueListenable: RecentlyPlayedService.instance.items,
@@ -245,6 +338,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     index: 2, child: _sectionTitle(brightness, 'كل القراء')),
               ),
             ],
+            if (_query.isNotEmpty)
+              SliverToBoxAdapter(
+                child:
+                    _buildUnifiedSearchResults(context, brightness, reciters),
+              ),
             if (filtered.isEmpty)
               SliverToBoxAdapter(
                 child: Padding(
@@ -296,6 +394,136 @@ class _HomeScreenState extends State<HomeScreen> {
     return Padding(
       padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 12.h),
       child: Text(title, style: AppTypography.title(brightness)),
+    );
+  }
+
+  /// نتايج بحث موحّدة: لو المستخدم كتب اسم سورة أو رقمها بدل اسم قارئ،
+  /// أو اسم قايمة تشغيل عنده، يلاقيها هنا فوق قايمة القراء المفلترة -
+  /// بدل ما يحس إنه في مكان غلط.
+  Widget _buildUnifiedSearchResults(
+    BuildContext context,
+    Brightness brightness,
+    List<ReciterModel> reciters,
+  ) {
+    final matchingSurahs = SurahData.all
+        .where((s) =>
+            s.number.toString() == _query ||
+            ArabicText.contains(s.arabicName, _query))
+        .take(5)
+        .toList();
+
+    return ValueListenableBuilder<List<Playlist>>(
+      valueListenable: PlaylistsService.instance.playlists,
+      builder: (context, playlists, _) {
+        final matchingPlaylists = playlists
+            .where((p) => ArabicText.contains(p.name, _query))
+            .take(5)
+            .toList();
+
+        if (matchingSurahs.isEmpty && matchingPlaylists.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (matchingSurahs.isNotEmpty) ...[
+              _sectionTitle(brightness, 'سور مطابقة'),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.w),
+                child: Column(
+                  children: matchingSurahs.map((surah) {
+                    final count = reciters
+                        .where((r) =>
+                            r.moshaf.any((m) => m.hasSurah(surah.number)))
+                        .length;
+                    return Padding(
+                      padding: EdgeInsets.only(bottom: 8.h),
+                      child: Material(
+                        color: AppColors.glassFill(brightness),
+                        borderRadius: BorderRadius.circular(14),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(14),
+                          onTap: count == 0
+                              ? null
+                              : () => Navigator.of(context).push(fadeScaleRoute(
+                                    SurahRecitersScreen(
+                                      surahNumber: surah.number,
+                                      surahName: surah.arabicName,
+                                      reciters: reciters,
+                                    ),
+                                  )),
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 14.w, vertical: 11.h),
+                            child: Row(
+                              children: [
+                                Icon(Icons.menu_book_rounded,
+                                    size: 17.sp,
+                                    color: AppColors.accentGoldSoft),
+                                SizedBox(width: 10.w),
+                                Expanded(
+                                    child: Text(surah.arabicName,
+                                        style: AppTypography.body(brightness))),
+                                Text('$count قارئ',
+                                    style: AppTypography.caption(brightness)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              SizedBox(height: 12.h),
+            ],
+            if (matchingPlaylists.isNotEmpty) ...[
+              _sectionTitle(brightness, 'قوائمك المطابقة'),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.w),
+                child: Column(
+                  children: matchingPlaylists.map((playlist) {
+                    return Padding(
+                      padding: EdgeInsets.only(bottom: 8.h),
+                      child: Material(
+                        color: AppColors.glassFill(brightness),
+                        borderRadius: BorderRadius.circular(14),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(14),
+                          onTap: () => Navigator.of(context).push(
+                            fadeScaleRoute(
+                                PlaylistDetailScreen(playlistId: playlist.id)),
+                          ),
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 14.w, vertical: 11.h),
+                            child: Row(
+                              children: [
+                                Icon(Icons.queue_music_rounded,
+                                    size: 17.sp,
+                                    color: AppColors.accentGoldSoft),
+                                SizedBox(width: 10.w),
+                                Expanded(
+                                    child: Text(playlist.name,
+                                        style: AppTypography.body(brightness))),
+                                Text('${playlist.items.length} سورة',
+                                    style: AppTypography.caption(brightness)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              SizedBox(height: 12.h),
+            ],
+            _sectionTitle(brightness, 'القراء'),
+          ],
+        );
+      },
     );
   }
 
@@ -368,6 +596,70 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
         ],
       ),
+    );
+  }
+
+  Widget _buildQuickAccessRow(
+      Brightness brightness, List<ReciterModel> reciters) {
+    final chips = [
+      (
+        icon: Icons.download_for_offline_rounded,
+        label: 'تحميلاتي',
+        onTap: () =>
+            Navigator.of(context).push(fadeScaleRoute(const DownloadsScreen())),
+      ),
+      (
+        icon: Icons.queue_music_rounded,
+        label: 'قوائمي',
+        onTap: () =>
+            Navigator.of(context).push(fadeScaleRoute(const PlaylistsScreen())),
+      ),
+      (
+        icon: Icons.self_improvement_rounded,
+        label: 'أجواء',
+        onTap: () {
+          final hour = DateTime.now().hour;
+          final suggested = (hour >= 21 || hour < 6) ? Mood.sleep : Mood.work;
+          Navigator.of(context).push(
+              fadeScaleRoute(MoodScreen(mood: suggested, reciters: reciters)));
+        },
+      ),
+      (
+        icon: Icons.tune_rounded,
+        label: 'الإعدادات',
+        onTap: () =>
+            Navigator.of(context).push(fadeScaleRoute(const SettingsScreen())),
+      ),
+    ];
+
+    return Row(
+      children: [
+        for (final chip in chips) ...[
+          Expanded(
+            child: GestureDetector(
+              onTap: chip.onTap,
+              child: Container(
+                padding: EdgeInsets.symmetric(vertical: 10.h),
+                decoration: BoxDecoration(
+                  color: AppColors.glassFill(brightness),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.glassBorder(brightness)),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(chip.icon,
+                        size: 18.sp, color: AppColors.accentGoldSoft),
+                    SizedBox(height: 4.h),
+                    Text(chip.label, style: AppTypography.caption(brightness)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          if (chip != chips.last) SizedBox(width: 10.w),
+        ],
+      ],
     );
   }
 
@@ -471,21 +763,25 @@ class _SurahBrowseButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => Navigator.of(context)
-          .push(fadeScaleRoute(SurahBrowseScreen(reciters: reciters))),
-      child: Container(
-        width: 40.w,
-        height: 40.w,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: AppColors.glassFill(brightness),
-          border: Border.all(color: AppColors.glassBorder(brightness)),
-        ),
-        child: Icon(
-          Icons.menu_book_rounded,
-          size: 19.sp,
-          color: AppColors.accentGoldSoft,
+    return Semantics(
+      button: true,
+      label: 'تصفح بالسورة',
+      child: GestureDetector(
+        onTap: () => Navigator.of(context)
+            .push(fadeScaleRoute(SurahBrowseScreen(reciters: reciters))),
+        child: Container(
+          width: 40.w,
+          height: 40.w,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.glassFill(brightness),
+            border: Border.all(color: AppColors.glassBorder(brightness)),
+          ),
+          child: Icon(
+            Icons.menu_book_rounded,
+            size: 19.sp,
+            color: AppColors.accentGoldSoft,
+          ),
         ),
       ),
     );
@@ -500,23 +796,27 @@ class _ProfileButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () =>
-          Navigator.of(context).push(fadeScaleRoute(const AboutScreen())),
-      child: Container(
-        width: 40.w,
-        height: 40.w,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: AppColors.glassFill(brightness),
-          border: Border.all(color: AppColors.glassBorder(brightness)),
-        ),
-        child: Icon(
-          Icons.person_rounded,
-          size: 20.sp,
-          color: brightness == Brightness.dark
-              ? AppColors.textPrimaryDark
-              : AppColors.textPrimaryLight,
+    return Semantics(
+      button: true,
+      label: 'عن المطوّر',
+      child: GestureDetector(
+        onTap: () =>
+            Navigator.of(context).push(fadeScaleRoute(const AboutScreen())),
+        child: Container(
+          width: 40.w,
+          height: 40.w,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.glassFill(brightness),
+            border: Border.all(color: AppColors.glassBorder(brightness)),
+          ),
+          child: Icon(
+            Icons.person_rounded,
+            size: 20.sp,
+            color: brightness == Brightness.dark
+                ? AppColors.textPrimaryDark
+                : AppColors.textPrimaryLight,
+          ),
         ),
       ),
     );
@@ -531,9 +831,8 @@ class _ThemeToggleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = brightness == Brightness.dark;
     return GestureDetector(
-      onTap: () => ThemeController.instance.toggle(),
+      onTap: () => ThemePickerSheet.show(context),
       child: Container(
         width: 40.w,
         height: 40.w,
@@ -542,20 +841,10 @@ class _ThemeToggleButton extends StatelessWidget {
           color: AppColors.glassFill(brightness),
           border: Border.all(color: AppColors.glassBorder(brightness)),
         ),
-        child: Center(
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 260),
-            transitionBuilder: (child, anim) => RotationTransition(
-              turns: anim,
-              child: FadeTransition(opacity: anim, child: child),
-            ),
-            child: Icon(
-              isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-              key: ValueKey(isDark),
-              size: 20.sp,
-              color: isDark ? AppColors.accentGoldSoft : AppColors.primary,
-            ),
-          ),
+        child: Icon(
+          Icons.palette_rounded,
+          size: 19.sp,
+          color: AppColors.accentGoldSoft,
         ),
       ),
     );
@@ -564,6 +853,52 @@ class _ThemeToggleButton extends StatelessWidget {
 
 /// كارت مصغّر بيتستخدم في شريطي "استكمل الاستماع" و"سورك المفضلة" - بيعرض
 /// السورة والقارئ وبيشغّلها فورًا لما تدوس عليه.
+/// كارت "أجواء" (نوم/مذاكرة/شغل/جيم) في الشاشة الرئيسية - كل كارت بلونه
+/// المميز، بيودّي على قائمة تشغيل جاهزة تناسب الأجواء دي.
+class _MoodCard extends StatelessWidget {
+  final Mood mood;
+  final List<ReciterModel> reciters;
+
+  const _MoodCard({required this.mood, required this.reciters});
+
+  @override
+  Widget build(BuildContext context) {
+    final info = MoodCatalog.all[mood]!;
+
+    return GestureDetector(
+      onTap: () => Navigator.of(context)
+          .push(fadeScaleRoute(MoodScreen(mood: mood, reciters: reciters))),
+      child: Container(
+        width: 128.w,
+        padding: EdgeInsets.all(14.w),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: info.gradient,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Icon(info.icon, color: Colors.white, size: 26.sp),
+            Text(
+              info.title,
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 13.sp,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _ContinueListeningCard extends StatelessWidget {
   final QueueItem item;
   final bool isFavoriteCard;

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_typography.dart';
-import '../../../shared/widgets/staggered_fade_in.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_typography.dart';
+import '../../shared/widgets/staggered_fade_in.dart';
 
 /// شاشة "عن المطوّر": بتعرّف بمطور التطبيق، وبتفتح على آية قرآنية،
 /// وبتدّي روابط التواصل الاجتماعي بتاعته.
@@ -59,7 +59,7 @@ class AboutScreen extends StatelessWidget {
                         height: 92.w,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          gradient: const LinearGradient(
+                          gradient: LinearGradient(
                             colors: AppColors.goldGradient,
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,

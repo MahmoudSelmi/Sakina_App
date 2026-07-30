@@ -6,8 +6,13 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../shared/widgets/now_playing_visuals.dart';
+import '../../../shared/widgets/page_transitions.dart';
 import '../../downloads/data/download_service.dart';
 import '../../favorites/data/favorites_service.dart';
+import '../../playlists/presentation/add_to_playlist_sheet.dart';
+import '../../reading/presentation/reading_screen.dart';
+import '../../settings/data/settings_service.dart';
+import '../../settings/data/volume_boost_service.dart';
 import '../cubit/player_cubit.dart';
 import '../cubit/player_state.dart';
 import '../data/queue_item.dart';
@@ -151,9 +156,27 @@ class _FullPlayerScreenState extends State<FullPlayerScreen>
                                             AppTypography.caption(brightness)),
                                   ],
                                 ),
-                                _GlassIconButton(
-                                  icon: Icons.queue_music_rounded,
-                                  onTap: () => QueueSheet.show(context),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    _GlassIconButton(
+                                      icon: Icons.menu_book_rounded,
+                                      size: 40,
+                                      iconSize: 18,
+                                      onTap: () => Navigator.of(context)
+                                          .push(fadeScaleRoute(
+                                        ReadingScreen(
+                                          surahNumber: item.surahNumber,
+                                          surahName: item.surahArabicName,
+                                        ),
+                                      )),
+                                    ),
+                                    SizedBox(width: 8.w),
+                                    _GlassIconButton(
+                                      icon: Icons.queue_music_rounded,
+                                      onTap: () => QueueSheet.show(context),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -237,7 +260,7 @@ class _FullPlayerScreenState extends State<FullPlayerScreen>
                                     height: 68.w,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      gradient: const LinearGradient(
+                                      gradient: LinearGradient(
                                         colors: [
                                           AppColors.primaryLight,
                                           AppColors.primary
@@ -290,21 +313,37 @@ class _FullPlayerScreenState extends State<FullPlayerScreen>
                               ],
                             ),
                             SizedBox(height: 12.h),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                _bottomAction(context, Icons.speed_rounded,
-                                    '${state.speed}x', () {
-                                  _showSpeedSheet(context);
-                                }),
-                                _bottomAction(context, Icons.bedtime_rounded,
-                                    'مؤقت النوم', () {
-                                  _showSleepTimerSheet(context);
-                                }),
-                                _FavoriteBottomAction(
-                                    reciterId: item.reciterId),
-                                _DownloadBottomAction(item: item),
-                              ],
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  _bottomAction(context, Icons.speed_rounded,
+                                      '${state.speed}x', () {
+                                    _showSpeedSheet(context);
+                                  }),
+                                  _bottomAction(context, Icons.bedtime_rounded,
+                                      'مؤقت النوم', () {
+                                    _showSleepTimerSheet(context);
+                                  }),
+                                  _bottomAction(
+                                      context,
+                                      Icons.playlist_add_rounded,
+                                      'أضف لقائمة', () {
+                                    AddToPlaylistSheet.show(context, item);
+                                  }),
+                                  _bottomAction(
+                                      context,
+                                      Icons.volume_up_rounded,
+                                      'مستوى الصوت', () {
+                                    _showVolumeBoostSheet(context, item);
+                                  }),
+                                  _FavoriteBottomAction(
+                                      reciterId: item.reciterId),
+                                  _DownloadBottomAction(item: item),
+                                ],
+                              ),
                             ),
                             SizedBox(height: 16.h),
                           ],
@@ -360,15 +399,73 @@ class _FullPlayerScreenState extends State<FullPlayerScreen>
     );
   }
 
+  void _showVolumeBoostSheet(BuildContext context, QueueItem item) {
+    final cubit = context.read<PlayerCubit>();
+    showModalBottomSheet(
+      context: context,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          var value = VolumeBoostService.instance.getBoost(item.reciterId);
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'مستوى صوت ${item.reciterName}',
+                    style:
+                        AppTypography.title(Theme.of(sheetContext).brightness),
+                  ),
+                  SizedBox(height: 6.h),
+                  Text(
+                    'لو حاسس إن القارئ ده صوته واطي أو عالي عن غيره، اظبطه هنا وهيفتكره المرة الجاية',
+                    textAlign: TextAlign.center,
+                    style: AppTypography.caption(
+                        Theme.of(sheetContext).brightness),
+                  ),
+                  Slider(
+                    value: value,
+                    min: 0.5,
+                    max: 2.0,
+                    divisions: 15,
+                    label: '${value.toStringAsFixed(2)}x',
+                    onChanged: (v) {
+                      setSheetState(() => value = v);
+                      cubit.setVolumeBoostForCurrentReciter(v);
+                    },
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      setSheetState(() => value = 1.0);
+                      cubit.setVolumeBoostForCurrentReciter(1.0);
+                    },
+                    child: const Text('رجوع للوضع الطبيعي'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   void _showSleepTimerSheet(BuildContext context) {
     final cubit = context.read<PlayerCubit>();
+    final defaultMinutes = SettingsService.instance.defaultSleepMinutes.value;
     showModalBottomSheet(
       context: context,
       builder: (_) => SafeArea(
         child: Wrap(
           children: [5, 10, 15, 30, 45, 60].map((minutes) {
+            final isDefault = minutes == defaultMinutes;
             return ListTile(
               title: Text('$minutes دقيقة'),
+              trailing: isDefault
+                  ? Icon(Icons.star_rounded,
+                      color: AppColors.accentGold, size: 18)
+                  : null,
               onTap: () {
                 cubit.setSleepTimer(Duration(minutes: minutes));
                 Navigator.pop(context);
@@ -490,7 +587,7 @@ class _DownloadBottomAction extends StatelessWidget {
         return InkWell(
           onTap: () => downloaded
               ? DownloadService.instance.deleteDownload(item.key)
-              : DownloadService.instance.download(item.key, item.audioUrl),
+              : DownloadService.instance.download(item),
           borderRadius: BorderRadius.circular(16),
           child: Padding(
             padding: const EdgeInsets.all(8.0),

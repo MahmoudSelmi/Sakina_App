@@ -58,5 +58,10 @@ class StorageKeys {
   static const String favoriteSurahs = 'favorite_surahs';
   static const String recentlyPlayed = 'recently_played';
   static const String downloadedSurahs = 'downloaded_surahs';
+  static const String playlists = 'playlists';
   static const String themeMode = 'theme_mode';
+  static const String defaultSpeed = 'default_speed';
+  static const String defaultSleepMinutes = 'default_sleep_minutes';
+  static const String wifiOnlyDownload = 'wifi_only_download';
+  static const String volumeBoosts = 'volume_boosts';
 }

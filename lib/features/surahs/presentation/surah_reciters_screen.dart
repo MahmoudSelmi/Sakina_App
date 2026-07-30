@@ -191,7 +191,7 @@ class _EntryTile extends StatelessWidget {
               Container(
                 width: 34.w,
                 height: 34.w,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
                       colors: [AppColors.primaryLight, AppColors.primary]),

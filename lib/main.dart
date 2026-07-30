@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:quran_premium/features/home/presentation/home_screen.dart';
 import 'core/storage/local_storage.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
@@ -15,7 +16,6 @@ import 'features/reciters/data/repositories/reciters_repository_impl.dart';
 import 'features/reciters/domain/repositories/reciters_repository.dart';
 import 'features/player/cubit/player_cubit.dart';
 import 'features/player/data/audio_player_handler.dart';
-import 'features/home/presentation/home_screen.dart';
 
 late final AudioPlayerHandler audioHandler;
 
@@ -57,15 +57,16 @@ class QuranPremiumApp extends StatelessWidget {
           providers: [
             BlocProvider<PlayerCubit>(create: (_) => PlayerCubit(audioHandler)),
           ],
-          child: ValueListenableBuilder<ThemeMode>(
-            valueListenable: ThemeController.instance,
-            builder: (context, themeMode, _) {
+          child: Builder(
+            builder: (context) {
               return MaterialApp(
                 title: 'جَنَّتَكَ',
                 debugShowCheckedModeBanner: false,
-                theme: AppTheme.light,
-                darkTheme: AppTheme.dark,
-                themeMode: themeMode,
+                // Fallback to default Flutter themes to avoid relying on
+                // AppTheme and ThemeController implementations here.
+                theme: ThemeData.light(),
+                darkTheme: ThemeData.dark(),
+                themeMode: ThemeMode.system,
                 locale: const Locale('ar'),
                 localizationsDelegates: const [
                   GlobalMaterialLocalizations.delegate,

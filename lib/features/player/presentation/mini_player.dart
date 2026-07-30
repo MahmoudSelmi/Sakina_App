@@ -53,7 +53,9 @@ class MiniPlayer extends StatelessWidget {
                     children: [
                       NowPlayingArt(
                         reciterId: item.reciterId,
-                        letter: item.reciterName.isNotEmpty ? item.reciterName[0] : '؟',
+                        letter: item.reciterName.isNotEmpty
+                            ? item.reciterName[0]
+                            : '؟',
                         size: 40.w,
                         isPlaying: state.isPlaying,
                       ),
@@ -90,24 +92,33 @@ class MiniPlayer extends StatelessWidget {
                         ),
                       ),
                       SizedBox(width: 6.w),
-                      GestureDetector(
-                        onTap: () {
-                          HapticFeedback.mediumImpact();
-                          context.read<PlayerCubit>().togglePlayPause();
-                        },
-                        child: Container(
-                          width: 42.w,
-                          height: 42.w,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: LinearGradient(
-                              colors: [AppColors.primaryLight, AppColors.primary],
+                      Semantics(
+                        button: true,
+                        label: state.isPlaying ? 'إيقاف' : 'تشغيل',
+                        child: GestureDetector(
+                          onTap: () {
+                            HapticFeedback.mediumImpact();
+                            context.read<PlayerCubit>().togglePlayPause();
+                          },
+                          child: Container(
+                            width: 42.w,
+                            height: 42.w,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: [
+                                  AppColors.primaryLight,
+                                  AppColors.primary
+                                ],
+                              ),
                             ),
-                          ),
-                          child: Icon(
-                            state.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                            size: 24.sp,
-                            color: Colors.white,
+                            child: Icon(
+                              state.isPlaying
+                                  ? Icons.pause_rounded
+                                  : Icons.play_arrow_rounded,
+                              size: 24.sp,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
@@ -124,7 +135,7 @@ class MiniPlayer extends StatelessWidget {
                       value: progress.clamp(0.0, 1.0),
                       minHeight: 3,
                       backgroundColor: AppColors.glassBorder(brightness),
-                      valueColor: const AlwaysStoppedAnimation(AppColors.primary),
+                      valueColor: AlwaysStoppedAnimation(AppColors.primary),
                     ),
                   ),
                 ],

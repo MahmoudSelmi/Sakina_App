@@ -1,16 +1,17 @@
 name: quran_premium
 description: Flagship Quran listening experience
-publish_to: "none"
+publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ">=3.3.0 <4.0.0"
+  sdk: '>=3.3.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
+  flutter_bloc: ^8.1.5
   equatable: ^2.0.5
   dio: ^5.4.3
   just_audio: ^0.9.40
@@ -26,7 +27,7 @@ dependencies:
   get_it: ^7.7.0
   rxdart: ^0.27.7
   url_launcher: ^6.3.1
-  flutter_bloc: ^9.1.1
+  share_plus: ^10.0.2
 
 dev_dependencies:
   flutter_test:

@@ -1,34 +1,27 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'app_colors.dart';
+import 'app_palette.dart';
 
 class AppTheme {
   AppTheme._();
 
-  static ThemeData get dark => _build(Brightness.dark);
-  static ThemeData get light => _build(Brightness.light);
-
-  static ThemeData _build(Brightness brightness) {
-    final isDark = brightness == Brightness.dark;
-    final bg = isDark ? AppColors.darkBg : AppColors.lightBg;
-    final surface = isDark ? AppColors.darkSurface : AppColors.lightSurface;
-    final onSurface =
-        isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight;
+  static ThemeData forPalette(AppPalette palette) {
+    final isDark = palette.brightness == Brightness.dark;
 
     return ThemeData(
       useMaterial3: true,
-      brightness: brightness,
-      scaffoldBackgroundColor: bg,
+      brightness: palette.brightness,
+      scaffoldBackgroundColor: palette.bg,
       colorScheme: ColorScheme(
-        brightness: brightness,
-        primary: AppColors.primary,
+        brightness: palette.brightness,
+        primary: palette.primary,
         onPrimary: Colors.white,
-        secondary: AppColors.accentGold,
+        secondary: palette.accentGold,
         onSecondary: Colors.black,
-        error: AppColors.error,
+        error: palette.error,
         onError: Colors.white,
-        surface: surface,
-        onSurface: onSurface,
+        surface: palette.surface,
+        onSurface: palette.textPrimary,
       ),
       splashFactory: InkRipple.splashFactory,
       pageTransitionsTheme: const PageTransitionsTheme(
@@ -37,16 +30,16 @@ class AppTheme {
           TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
         },
       ),
-      splashColor: AppColors.primary.withValues(alpha: 0.08),
-      highlightColor: AppColors.primary.withValues(alpha: 0.04),
+      splashColor: palette.primary.withValues(alpha: 0.08),
+      highlightColor: palette.primary.withValues(alpha: 0.04),
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
-        foregroundColor: onSurface,
+        foregroundColor: palette.textPrimary,
       ),
       cardTheme: CardThemeData(
-        color: isDark ? AppColors.darkCard : AppColors.lightCard,
+        color: palette.card,
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
