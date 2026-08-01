@@ -47,11 +47,9 @@ class DownloadsScreen extends StatelessWidget {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: AppColors.glassFill(brightness),
-                              border: Border.all(
-                                  color: AppColors.glassBorder(brightness)),
+                              border: Border.all(color: AppColors.glassBorder(brightness)),
                             ),
-                            child:
-                                Icon(Icons.arrow_forward_rounded, size: 20.sp),
+                            child: Icon(Icons.arrow_forward_rounded, size: 20.sp),
                           ),
                         ),
                         SizedBox(width: 12.w),
@@ -59,12 +57,9 @@ class DownloadsScreen extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('تحميلاتي',
-                                  style: AppTypography.title(brightness)),
+                              Text('تحميلاتي', style: AppTypography.title(brightness)),
                               Text(
-                                items.isEmpty
-                                    ? 'مفيش تحميلات لسه'
-                                    : '${items.length} سورة محمّلة',
+                                items.isEmpty ? 'مفيش تحميلات لسه' : '${items.length} سورة محمّلة',
                                 style: AppTypography.caption(brightness),
                               ),
                             ],
@@ -72,23 +67,17 @@ class DownloadsScreen extends StatelessWidget {
                         ),
                         if (items.isNotEmpty)
                           GestureDetector(
-                            onTap: () => context
-                                .read<PlayerCubit>()
-                                .playQueue(items, startIndex: 0),
+                            onTap: () => context.read<PlayerCubit>().playQueue(items, startIndex: 0),
                             child: Container(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 14.w, vertical: 8.h),
+                              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
                               decoration: BoxDecoration(
-                                gradient: LinearGradient(colors: [
-                                  AppColors.primaryLight,
-                                  AppColors.primary
-                                ]),
+                                gradient: LinearGradient(
+                                    colors: [AppColors.primaryLight, AppColors.primary]),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Row(
                                 children: [
-                                  const Icon(Icons.play_arrow_rounded,
-                                      color: Colors.white, size: 18),
+                                  const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 18),
                                   SizedBox(width: 4.w),
                                   Text('تشغيل الكل',
                                       style: AppTypography.label(brightness)
@@ -127,8 +116,7 @@ class DownloadsScreen extends StatelessWidget {
                               return StaggeredFadeIn(
                                 index: index,
                                 stepDelay: const Duration(milliseconds: 20),
-                                child: _DownloadTile(
-                                    item: item, allItems: items, index: index),
+                                child: _DownloadTile(item: item, allItems: items, index: index),
                               );
                             },
                           ),
@@ -148,8 +136,7 @@ class _DownloadTile extends StatelessWidget {
   final List<QueueItem> allItems;
   final int index;
 
-  const _DownloadTile(
-      {required this.item, required this.allItems, required this.index});
+  const _DownloadTile({required this.item, required this.allItems, required this.index});
 
   @override
   Widget build(BuildContext context) {
@@ -160,8 +147,7 @@ class _DownloadTile extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () =>
-            context.read<PlayerCubit>().playQueue(allItems, startIndex: index),
+        onTap: () => context.read<PlayerCubit>().playQueue(allItems, startIndex: index),
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
           child: Row(
@@ -176,18 +162,14 @@ class _DownloadTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(item.surahArabicName,
-                        style: AppTypography.body(brightness)),
-                    Text(item.reciterName,
-                        style: AppTypography.caption(brightness)),
+                    Text(item.surahArabicName, style: AppTypography.body(brightness)),
+                    Text(item.reciterName, style: AppTypography.caption(brightness)),
                   ],
                 ),
               ),
               IconButton(
-                onPressed: () =>
-                    DownloadService.instance.deleteDownload(item.key),
-                icon: Icon(Icons.delete_outline_rounded,
-                    color: AppColors.error, size: 20.sp),
+                onPressed: () => DownloadService.instance.deleteDownload(item.key),
+                icon: Icon(Icons.delete_outline_rounded, color: AppColors.error, size: 20.sp),
               ),
             ],
           ),

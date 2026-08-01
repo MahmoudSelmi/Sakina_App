@@ -271,7 +271,7 @@ class _FullPlayerScreenState extends State<FullPlayerScreen>
                                       boxShadow: [
                                         BoxShadow(
                                           color: AppColors.primary
-                                              .withValues(alpha: 0.4),
+                                              .withOpacity(0.4),
                                           blurRadius: 20,
                                           spreadRadius: 1,
                                         ),

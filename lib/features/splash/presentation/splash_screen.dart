@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../core/storage/local_storage.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../onboarding/presentation/onboarding_screen.dart';
 import '../../reciters/data/datasources/reciters_remote_data_source.dart';
 import '../../reciters/data/repositories/reciters_repository_impl.dart';
 import '../../home/presentation/home_screen.dart';
@@ -15,8 +17,7 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
-    with TickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
   late final AnimationController _logoController;
   late final AnimationController _glowController;
   late final Animation<double> _logoScale;
@@ -34,14 +35,8 @@ class _SplashScreenState extends State<SplashScreen>
     );
 
     _logoScale = TweenSequence<double>([
-      TweenSequenceItem(
-          tween: Tween(begin: 0.6, end: 1.08)
-              .chain(CurveTween(curve: Curves.easeOutBack)),
-          weight: 65),
-      TweenSequenceItem(
-          tween: Tween(begin: 1.08, end: 1.0)
-              .chain(CurveTween(curve: Curves.easeOut)),
-          weight: 35),
+      TweenSequenceItem(tween: Tween(begin: 0.6, end: 1.08).chain(CurveTween(curve: Curves.easeOutBack)), weight: 65),
+      TweenSequenceItem(tween: Tween(begin: 1.08, end: 1.0).chain(CurveTween(curve: Curves.easeOut)), weight: 35),
     ]).animate(_logoController);
 
     _logoFade = CurvedAnimation(
@@ -72,14 +67,23 @@ class _SplashScreenState extends State<SplashScreen>
     await Future.delayed(const Duration(milliseconds: 3000));
     if (!mounted) return;
 
-    final repository = RecitersRepositoryImpl(RecitersRemoteDataSourceImpl());
+    final hasSeenOnboarding =
+        LocalStorage.instance.getBool(StorageKeys.hasSeenOnboarding) ?? false;
+
+    Widget nextScreen;
+    if (!hasSeenOnboarding) {
+      nextScreen = const OnboardingScreen();
+    } else {
+      final repository = RecitersRepositoryImpl(RecitersRemoteDataSourceImpl());
+      nextScreen = HomeScreen(repository: repository);
+    }
+
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 700),
-        pageBuilder: (_, __, ___) => HomeScreen(repository: repository),
+        pageBuilder: (_, __, ___) => nextScreen,
         transitionsBuilder: (_, animation, __, child) {
-          final curved =
-              CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+          final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
           return FadeTransition(
             opacity: curved,
             child: ScaleTransition(
@@ -135,8 +139,7 @@ class _SplashScreenState extends State<SplashScreen>
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color:
-                                  AppColors.accentGold.withValues(alpha: glow),
+                              color: AppColors.accentGold.withOpacity(glow),
                               blurRadius: 48,
                               spreadRadius: 6,
                             ),
@@ -145,7 +148,7 @@ class _SplashScreenState extends State<SplashScreen>
                         child: Icon(
                           Icons.mosque_rounded,
                           size: 64.sp,
-                          color: Colors.black.withValues(alpha: 0.82),
+                          color: Colors.black.withOpacity(0.82),
                         ),
                       ),
                     ),
@@ -157,8 +160,7 @@ class _SplashScreenState extends State<SplashScreen>
                 opacity: _wordmarkFade,
                 child: ShaderMask(
                   shaderCallback: (bounds) =>
-                      LinearGradient(colors: AppColors.goldGradient)
-                          .createShader(bounds),
+                      LinearGradient(colors: AppColors.goldGradient).createShader(bounds),
                   child: Text(
                     'جَنَّتَكَ',
                     style: GoogleFonts.amiri(
@@ -175,7 +177,7 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Text(
                   'استمع... واطمئن',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.6),
+                    color: Colors.white.withOpacity(0.6),
                     fontSize: 14.sp,
                     letterSpacing: 0.5,
                   ),

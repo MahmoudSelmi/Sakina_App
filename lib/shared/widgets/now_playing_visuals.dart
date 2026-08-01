@@ -77,7 +77,11 @@ class _NowPlayingArtState extends State<NowPlayingArt>
 
   @override
   Widget build(BuildContext context) {
-    final haloSize = widget.size * 1.18;
+    // بنحمي نفسنا من احتمال إن widget.size يوصل صفر أو رقم صغير جدًا (زي
+    // لحظة أول فريم قبل ما ScreenUtil ياخد قياسات الشاشة الحقيقية)، عشان
+    // متطلعش constraints بعرض/ارتفاع سالب وتكسر الشاشة.
+    final haloSize = math.max(widget.size * 1.18, 24.0);
+    final innerSize = math.max(haloSize - 10, 4.0);
 
     return SizedBox(
       width: haloSize,
@@ -96,17 +100,17 @@ class _NowPlayingArtState extends State<NowPlayingArt>
             child: Container(
               width: haloSize,
               height: haloSize,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: SweepGradient(
                   colors: _haloColors,
-                  transform: GradientRotation(-math.pi / 2),
+                  transform: const GradientRotation(-math.pi / 2),
                 ),
               ),
               child: Center(
                 child: Container(
-                  width: haloSize - 10,
-                  height: haloSize - 10,
+                  width: innerSize,
+                  height: innerSize,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: Theme.of(context).scaffoldBackgroundColor,

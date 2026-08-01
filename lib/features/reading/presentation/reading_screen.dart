@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../favorites/data/ayah_favorites_service.dart';
 import '../data/ayah_model.dart';
 import '../data/quran_text_service.dart';
 
@@ -194,17 +196,74 @@ class _ReadingScreenState extends State<ReadingScreen> {
   }
 
   Widget _ayahBadge(Brightness brightness, int number) {
-    return Container(
-      width: 26.w,
-      height: 26.w,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(colors: AppColors.goldGradient),
+    return GestureDetector(
+      onTap: () => _showAyahActions(number),
+      child: ValueListenableBuilder<Set<String>>(
+        valueListenable: AyahFavoritesService.instance.favorites,
+        builder: (context, favs, _) {
+          final isFav = AyahFavoritesService.instance.isFavorite(widget.surahNumber, number);
+          return Container(
+            width: 26.w,
+            height: 26.w,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(colors: AppColors.goldGradient),
+              border: isFav ? Border.all(color: AppColors.error, width: 2) : null,
+            ),
+            child: Text(
+              '$number',
+              style: const TextStyle(color: Colors.black87, fontSize: 11, fontWeight: FontWeight.w700),
+            ),
+          );
+        },
       ),
-      child: Text(
-        '$number',
-        style: const TextStyle(color: Colors.black87, fontSize: 11, fontWeight: FontWeight.w700),
+    );
+  }
+
+  void _showAyahActions(int ayahNumber) {
+    final brightness = Theme.of(context).brightness;
+    final isFav = AyahFavoritesService.instance.isFavorite(widget.surahNumber, ayahNumber);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => SafeArea(
+        child: Container(
+          margin: EdgeInsets.all(16.w),
+          padding: EdgeInsets.symmetric(vertical: 8.h),
+          decoration: BoxDecoration(
+            color: brightness == Brightness.dark
+                ? AppColors.darkSurfaceElevated
+                : AppColors.lightSurface,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(
+                  isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                  color: isFav ? AppColors.error : AppColors.accentGoldSoft,
+                ),
+                title: Text(isFav ? 'إزالة من المفضلة' : 'إضافة للمفضلة'),
+                onTap: () {
+                  AyahFavoritesService.instance.toggle(widget.surahNumber, ayahNumber);
+                  Navigator.of(sheetContext).pop();
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.ios_share_rounded, color: AppColors.accentGoldSoft),
+                title: const Text('مشاركة الآية'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  SharePlus.instance.share(ShareParams(
+                    text: 'سورة ${widget.surahName} - الآية $ayahNumber\nمن تطبيق جَنَّتَكَ 🌙',
+                  ));
+                },
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

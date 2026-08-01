@@ -7,9 +7,11 @@ import 'package:just_audio/just_audio.dart' hide PlayerState;
 import '../../../core/storage/local_storage.dart';
 import '../../../core/utils/notification_artwork_generator.dart';
 import '../../downloads/data/download_service.dart';
+import '../../khatma/data/khatma_service.dart';
 import '../../recently_played/data/recently_played_service.dart';
 import '../../settings/data/settings_service.dart';
 import '../../settings/data/volume_boost_service.dart';
+import '../../streak/data/streak_service.dart';
 import '../data/audio_player_handler.dart';
 import '../data/queue_item.dart';
 import 'player_state.dart';
@@ -24,6 +26,7 @@ class PlayerCubit extends Cubit<PlayerState> {
   StreamSubscription<dynamic>? _playerStateSub;
   Timer? _persistTimer;
   Timer? _sleepTimer;
+  Timer? _fadeTimer;
 
   PlayerCubit(this._handler)
       : super(PlayerState(speed: SettingsService.instance.defaultSpeed.value)) {
@@ -135,6 +138,7 @@ class PlayerCubit extends Cubit<PlayerState> {
           .setVolume(VolumeBoostService.instance.getBoost(item.reciterId));
       if (autoPlay) {
         await _audioPlayer.play();
+        StreakService.instance.recordListen();
       }
       _handler.setCurrentMediaItem(await _toMediaItem(item));
       _storage.setInt(StorageKeys.lastReciterId, item.reciterId);
@@ -174,6 +178,7 @@ class PlayerCubit extends Cubit<PlayerState> {
       await _persistProgress();
     } else {
       await _audioPlayer.play();
+      StreakService.instance.recordListen();
     }
   }
 
@@ -205,6 +210,10 @@ class PlayerCubit extends Cubit<PlayerState> {
   }
 
   void _onTrackCompleted() {
+    final finished = state.currentItem;
+    if (finished != null) {
+      KhatmaService.instance.markSurahCompleted(finished.surahNumber);
+    }
     if (state.repeatMode == RepeatMode.one) {
       _audioPlayer.seek(Duration.zero);
       _audioPlayer.play();
@@ -249,17 +258,54 @@ class PlayerCubit extends Cubit<PlayerState> {
     emit(state.copyWith(repeatMode: next));
   }
 
+  /// بيبدأ التلاشي التدريجي لمستوى الصوت في آخر ثواني قبل ما مؤقت النوم
+  /// يوقف التشغيل، عشان الصوت يهدى بهدوء بدل ما يوقف فجأة ويصحّي حد نايم.
+  void _startVolumeFadeOut() {
+    _fadeTimer?.cancel();
+    final item = state.currentItem;
+    final startVolume = item != null
+        ? VolumeBoostService.instance.getBoost(item.reciterId)
+        : 1.0;
+    const totalSteps = 25;
+    var step = 0;
+
+    _fadeTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      step++;
+      final fraction = (1 - (step / totalSteps)).clamp(0.0, 1.0);
+      _audioPlayer.setVolume(startVolume * fraction);
+      if (step >= totalSteps) timer.cancel();
+    });
+  }
+
+  Future<void> _restoreNormalVolume() async {
+    final item = state.currentItem;
+    final restore = item != null
+        ? VolumeBoostService.instance.getBoost(item.reciterId)
+        : 1.0;
+    await _audioPlayer.setVolume(restore);
+  }
+
   void setSleepTimer(Duration duration) {
     _sleepTimer?.cancel();
+    _fadeTimer?.cancel();
     emit(state.copyWith(sleepTimerRemaining: duration));
+
+    const fadeWindow = Duration(seconds: 25);
+    final fadeDelay =
+        duration > fadeWindow ? duration - fadeWindow : Duration.zero;
+    Timer(fadeDelay, _startVolumeFadeOut);
+
     _sleepTimer = Timer(duration, () async {
       await _audioPlayer.pause();
+      await _restoreNormalVolume();
       emit(state.copyWith(clearSleepTimer: true));
     });
   }
 
   void cancelSleepTimer() {
     _sleepTimer?.cancel();
+    _fadeTimer?.cancel();
+    _restoreNormalVolume();
     emit(state.copyWith(clearSleepTimer: true));
   }
 
@@ -285,6 +331,7 @@ class PlayerCubit extends Cubit<PlayerState> {
     _playerStateSub?.cancel();
     _persistTimer?.cancel();
     _sleepTimer?.cancel();
+    _fadeTimer?.cancel();
     await _handler.dispose();
     return super.close();
   }

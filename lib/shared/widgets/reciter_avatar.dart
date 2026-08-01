@@ -58,13 +58,12 @@ class ReciterAvatar extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: _gradient.last.withValues(alpha: 0.35),
+                  color: _gradient.last.withOpacity(0.35),
                   blurRadius: size * 0.35,
                   spreadRadius: size * 0.02,
                 ),
               ],
-              border: Border.all(
-                  color: _gradient.last.withValues(alpha: 0.55), width: 2),
+              border: Border.all(color: _gradient.last.withOpacity(0.55), width: 2),
             )
           : null,
       padding: ring ? const EdgeInsets.all(2) : EdgeInsets.zero,
@@ -108,12 +107,12 @@ class _GeneratedAvatar extends StatelessWidget {
         children: [
           CustomPaint(
             size: Size(size, size),
-            painter: _StarPainter(Colors.white.withValues(alpha: 0.22)),
+            painter: _StarPainter(Colors.white.withOpacity(0.22)),
           ),
           Text(
             letter.isNotEmpty ? letter : '؟',
             style: AppTypography.quranic(Brightness.dark).copyWith(
-              color: Colors.black.withValues(alpha: 0.78),
+              color: Colors.black.withOpacity(0.78),
               fontSize: size * 0.42,
               height: 1,
             ),
@@ -159,6 +158,6 @@ class _StarPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _StarPainter oldDelegate) =>
-      oldDelegate.color != color;
+  bool shouldRepaint(covariant _StarPainter oldDelegate) => oldDelegate.color != color;
 }
+

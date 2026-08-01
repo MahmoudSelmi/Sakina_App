@@ -10,8 +10,7 @@ class PlaylistsService {
   PlaylistsService._internal();
   static final PlaylistsService instance = PlaylistsService._internal();
 
-  final ValueNotifier<List<Playlist>> playlists =
-      ValueNotifier<List<Playlist>>(const []);
+  final ValueNotifier<List<Playlist>> playlists = ValueNotifier<List<Playlist>>(const []);
 
   void load() {
     final raw = LocalStorage.instance.getString(StorageKeys.playlists);
@@ -58,7 +57,7 @@ class PlaylistsService {
   bool contains(String playlistId, QueueItem item) {
     final playlist = playlists.value.firstWhere(
       (p) => p.id == playlistId,
-      orElse: () => const Playlist(id: '', name: '', createdAt: 0, items: []),
+      orElse: () => Playlist(id: '', name: '', createdAt: 0, items: const []),
     );
     return playlist.items.contains(item);
   }
@@ -81,8 +80,7 @@ class PlaylistsService {
   }
 
   /// بيعيد ترتيب سور قائمة تشغيل معينة (بيتستخدم مع السحب والإفلات).
-  Future<void> reorderItems(
-      String playlistId, int oldIndex, int newIndex) async {
+  Future<void> reorderItems(String playlistId, int oldIndex, int newIndex) async {
     playlists.value = playlists.value.map((p) {
       if (p.id != playlistId) return p;
       final items = List<QueueItem>.from(p.items);

@@ -54,7 +54,9 @@ class _ReciterDetailScreenState extends State<ReciterDetailScreen> {
   }
 
   void _shareReciter() {
-    Share.share('استمع لتلاوات ${widget.reciter.name} على تطبيق جَنَّتَكَ 🌙');
+    SharePlus.instance.share(ShareParams(
+      text: 'استمع لتلاوات ${widget.reciter.name} على تطبيق جَنَّتَكَ 🌙',
+    ));
   }
 
   Future<void> _downloadAllSurahs(BuildContext context) async {
@@ -225,7 +227,7 @@ class _ReciterDetailScreenState extends State<ReciterDetailScreen> {
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
                                 gradient: selected
-                                    ?  LinearGradient(colors: [
+                                    ? LinearGradient(colors: [
                                         AppColors.primaryLight,
                                         AppColors.primary,
                                       ])
@@ -240,7 +242,7 @@ class _ReciterDetailScreenState extends State<ReciterDetailScreen> {
                                 boxShadow: selected
                                     ? [
                                         BoxShadow(
-                                          color: AppColors.primary.withValues(alpha: 0.28),
+                                          color: AppColors.primary.withOpacity(0.28),
                                           blurRadius: 12,
                                           offset: const Offset(0, 4),
                                         ),
@@ -377,7 +379,7 @@ class _SurahRow extends StatelessWidget {
 
         return Material(
           color: isCurrent
-              ? AppColors.primary.withValues(alpha: 0.14)
+              ? AppColors.primary.withOpacity(0.14)
               : AppColors.glassFill(brightness),
           borderRadius: BorderRadius.circular(16),
           child: InkWell(
@@ -395,7 +397,7 @@ class _SurahRow extends StatelessWidget {
                       shape: BoxShape.circle,
                       color: isCurrent
                           ? AppColors.primary
-                          : AppColors.primary.withValues(alpha: 0.12),
+                          : AppColors.primary.withOpacity(0.12),
                     ),
                     child: Text(
                       '$surahNumber',
@@ -455,8 +457,8 @@ class _SurahRow extends StatelessWidget {
                         colors: isCurrent
                             ? [AppColors.primaryLight, AppColors.primary]
                             : [
-                                AppColors.primary.withValues(alpha: 0.16),
-                                AppColors.primary.withValues(alpha: 0.16),
+                                AppColors.primary.withOpacity(0.16),
+                                AppColors.primary.withOpacity(0.16),
                               ],
                       ),
                     ),

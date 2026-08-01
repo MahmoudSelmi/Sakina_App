@@ -20,8 +20,7 @@ class NotificationArtworkGenerator {
 
   static final Map<int, Uri> _cache = {};
 
-  static Future<Uri?> generate(
-      {required int reciterId, required String letter}) async {
+  static Future<Uri?> generate({required int reciterId, required String letter}) async {
     if (_cache.containsKey(reciterId)) return _cache[reciterId];
 
     try {
@@ -51,18 +50,16 @@ class NotificationArtworkGenerator {
       final textSpan = TextSpan(
         text: letter.isNotEmpty ? letter : '؟',
         style: TextStyle(
-          color: Colors.black.withValues(alpha: 0.78),
+          color: Colors.black.withOpacity(0.78),
           fontSize: size * 0.42,
           fontWeight: FontWeight.w700,
         ),
       );
-      final textPainter =
-          TextPainter(text: textSpan, textDirection: TextDirection.rtl);
+      final textPainter = TextPainter(text: textSpan, textDirection: TextDirection.rtl);
       textPainter.layout();
       textPainter.paint(
         canvas,
-        Offset(center.dx - textPainter.width / 2,
-            center.dy - textPainter.height / 2),
+        Offset(center.dx - textPainter.width / 2, center.dy - textPainter.height / 2),
       );
 
       final picture = recorder.endRecording();
@@ -70,8 +67,7 @@ class NotificationArtworkGenerator {
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       if (byteData == null) return null;
 
-      final bytes = byteData.buffer
-          .asUint8List(byteData.offsetInBytes, byteData.lengthInBytes);
+      final bytes = byteData.buffer.asUint8List(byteData.offsetInBytes, byteData.lengthInBytes);
       await file.writeAsBytes(bytes);
 
       final uri = Uri.file(file.path);

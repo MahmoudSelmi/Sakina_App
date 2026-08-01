@@ -13,14 +13,15 @@ import '../../../core/utils/mood_playlist_builder.dart';
 import '../../../shared/widgets/app_logo.dart';
 import '../../../shared/widgets/reassurance_banner.dart';
 import '../../../shared/widgets/theme_picker_sheet.dart';
-import '../../presentation/about_screen.dart';
 import '../../../shared/widgets/page_transitions.dart';
 import '../../../shared/widgets/reciter_avatar.dart';
 import '../../../shared/widgets/staggered_fade_in.dart';
-import '../../downloads/presentation/downloads_screen.dart';
 import '../../favorites/data/favorites_service.dart';
 import '../../favorites/data/surah_favorites_service.dart';
+import '../../khatma/data/khatma_service.dart';
+import '../../khatma/presentation/khatma_screen.dart';
 import '../../moods/presentation/mood_screen.dart';
+import '../../notifications/data/notification_service.dart';
 import '../../player/cubit/player_cubit.dart';
 import '../../player/cubit/player_state.dart';
 import '../../player/data/queue_item.dart';
@@ -29,8 +30,9 @@ import '../../playlists/data/playlist_model.dart';
 import '../../playlists/data/playlists_service.dart';
 import '../../playlists/presentation/playlist_detail_screen.dart';
 import '../../playlists/presentation/playlists_screen.dart';
+import '../../profile/presentation/profile_screen.dart';
 import '../../recently_played/data/recently_played_service.dart';
-import '../../settings/presentation/settings_screen.dart';
+import '../../streak/data/streak_service.dart';
 import '../../reciters/data/models/reciter_model.dart';
 import '../../reciters/domain/repositories/reciters_repository.dart';
 import '../../reciters/presentation/reciter_detail_screen.dart';
@@ -48,7 +50,7 @@ class HomeScreen extends StatefulWidget {
 
 enum _HomeTab { all, favorites }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   late Future<List<ReciterModel>> _recitersFuture;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocus = FocusNode();
@@ -61,6 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _recitersFuture = widget.repository.getReciters();
     _searchController.addListener(() {
       _debounce?.cancel();
@@ -71,13 +74,80 @@ class _HomeScreenState extends State<HomeScreen> {
     _searchFocus.addListener(() {
       setState(() => _searchFocused = _searchFocus.hasFocus);
     });
+    KhatmaService.instance.onKhatmaCompleted = (count) {
+      if (mounted) _showKhatmaCelebration(count);
+    };
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // لما التطبيق يروح للخلفية، نجدول تذكير لطيف بعد 24 ساعة لو ماسمعش؛
+    // ولما يرجع تاني، نلغي التذكير عشان مايوصلوش وهو مستخدم بالفعل.
+    if (state == AppLifecycleState.paused) {
+      NotificationService.instance.scheduleComeBackReminder();
+    } else if (state == AppLifecycleState.resumed) {
+      NotificationService.instance.cancelComeBackReminder();
+    }
+  }
+
+  void _showKhatmaCelebration(int count) {
+    final brightness = Theme.of(context).brightness;
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: brightness == Brightness.dark
+            ? AppColors.darkSurfaceElevated
+            : AppColors.lightSurface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ShaderMask(
+              shaderCallback: (bounds) =>
+                  LinearGradient(colors: AppColors.goldGradient).createShader(bounds),
+              child: Icon(Icons.auto_awesome_rounded, size: 48.sp, color: Colors.white),
+            ),
+            SizedBox(height: 14.h),
+            Text('بارك الله فيك! 🎉', style: AppTypography.title(brightness)),
+            SizedBox(height: 8.h),
+            Text(
+              'خلّصت الختمة رقم $count كاملة بفضل الله',
+              textAlign: TextAlign.center,
+              style: AppTypography.body(brightness),
+            ),
+            SizedBox(height: 16.h),
+            Container(
+              padding: EdgeInsets.all(14.w),
+              decoration: BoxDecoration(
+                color: AppColors.glassFill(brightness),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(
+                'اللهم ارحمنا بالقرآن، واجعله لنا إمامًا ونورًا وهدىً ورحمة،\n'
+                'اللهم ذكّرنا منه ما نُسِّينا، وعلّمنا منه ما جهلنا،\n'
+                'وارزقنا تلاوته آناء الليل وأطراف النهار، واجعله لنا حجة يا رب العالمين',
+                textAlign: TextAlign.center,
+                style: AppTypography.caption(brightness).copyWith(height: 1.8),
+              ),
+            ),
+            SizedBox(height: 18.h),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('الحمد لله'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _debounce?.cancel();
     _searchController.dispose();
     _searchFocus.dispose();
+    KhatmaService.instance.onKhatmaCompleted = null;
     super.dispose();
   }
 
@@ -124,23 +194,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: SafeArea(
                     bottom: false,
                     child: Container(
-                      margin:
-                          EdgeInsets.symmetric(horizontal: 20.w, vertical: 6.h),
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+                      margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 6.h),
+                      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
                       decoration: BoxDecoration(
-                        color: AppColors.error.withValues(alpha: 0.92),
+                        color: AppColors.error.withOpacity(0.92),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.wifi_off_rounded,
-                              color: Colors.white, size: 16),
+                          const Icon(Icons.wifi_off_rounded, color: Colors.white, size: 16),
                           SizedBox(width: 8.w),
                           Text('مفيش اتصال بالإنترنت دلوقتي',
-                              style: AppTypography.caption(brightness)
-                                  .copyWith(color: Colors.white)),
+                              style: AppTypography.caption(brightness).copyWith(color: Colors.white)),
                         ],
                       ),
                     ),
@@ -169,8 +235,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildContent(BuildContext context, Brightness brightness,
-      List<ReciterModel> reciters) {
+  Widget _buildContent(BuildContext context, Brightness brightness, List<ReciterModel> reciters) {
     final popular = reciters.take(12).toList();
 
     return ValueListenableBuilder<Set<int>>(
@@ -195,21 +260,25 @@ class _HomeScreenState extends State<HomeScreen> {
                       Row(
                         children: [
                           const Expanded(child: AppLogo()),
-                          _SurahBrowseButton(
-                              brightness: brightness, reciters: reciters),
+                          _SurahBrowseButton(brightness: brightness, reciters: reciters),
                           SizedBox(width: 8.w),
                           _ProfileButton(brightness: brightness),
-                          SizedBox(width: 8.w),
-                          _ThemeToggleButton(brightness: brightness),
                         ],
                       ),
                       SizedBox(height: 6.h),
-                      Text('استكمل رحلتك مع القرآن',
-                          style: AppTypography.body(brightness)),
+                      Text('استكمل رحلتك مع القرآن', style: AppTypography.body(brightness)),
                       SizedBox(height: 18.h),
                       _buildSearchBar(brightness),
                       SizedBox(height: 14.h),
                       _buildQuickAccessRow(brightness, reciters),
+                      SizedBox(height: 14.h),
+                      Row(
+                        children: [
+                          Expanded(child: _buildKhatmaCard(brightness)),
+                          SizedBox(width: 10.w),
+                          _buildStreakCard(brightness),
+                        ],
+                      ),
                       SizedBox(height: 16.h),
                       _buildTabSwitch(brightness, favoriteIds.length),
                       SizedBox(height: 20.h),
@@ -223,9 +292,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    StaggeredFadeIn(
-                        index: 1,
-                        child: _sectionTitle(brightness, 'أجواء تناسبك')),
+                    StaggeredFadeIn(index: 1, child: _sectionTitle(brightness, 'أجواء تناسبك')),
                     SizedBox(
                       height: 108.h,
                       child: ListView.separated(
@@ -236,8 +303,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         itemBuilder: (context, index) => StaggeredFadeIn(
                           index: index + 2,
                           direction: Axis.horizontal,
-                          child: _MoodCard(
-                              mood: Mood.values[index], reciters: reciters),
+                          child: _MoodCard(mood: Mood.values[index], reciters: reciters),
                         ),
                       ),
                     ),
@@ -301,8 +367,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             itemBuilder: (context, index) => StaggeredFadeIn(
                               index: index + 2,
                               direction: Axis.horizontal,
-                              child: _ContinueListeningCard(
-                                  item: items[index], isFavoriteCard: true),
+                              child: _ContinueListeningCard(item: items[index], isFavoriteCard: true),
                             ),
                           ),
                         ),
@@ -313,8 +378,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               SliverToBoxAdapter(
-                child: StaggeredFadeIn(
-                    index: 1, child: _sectionTitle(brightness, 'قراء مميزون')),
+                child: StaggeredFadeIn(index: 1, child: _sectionTitle(brightness, 'قراء مميزون')),
               ),
               SliverToBoxAdapter(
                 child: SizedBox(
@@ -334,14 +398,12 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               SliverToBoxAdapter(child: SizedBox(height: 24.h)),
               SliverToBoxAdapter(
-                child: StaggeredFadeIn(
-                    index: 2, child: _sectionTitle(brightness, 'كل القراء')),
+                child: StaggeredFadeIn(index: 2, child: _sectionTitle(brightness, 'كل القراء')),
               ),
             ],
             if (_query.isNotEmpty)
               SliverToBoxAdapter(
-                child:
-                    _buildUnifiedSearchResults(context, brightness, reciters),
+                child: _buildUnifiedSearchResults(context, brightness, reciters),
               ),
             if (filtered.isEmpty)
               SliverToBoxAdapter(
@@ -406,19 +468,15 @@ class _HomeScreenState extends State<HomeScreen> {
     List<ReciterModel> reciters,
   ) {
     final matchingSurahs = SurahData.all
-        .where((s) =>
-            s.number.toString() == _query ||
-            ArabicText.contains(s.arabicName, _query))
+        .where((s) => s.number.toString() == _query || ArabicText.contains(s.arabicName, _query))
         .take(5)
         .toList();
 
     return ValueListenableBuilder<List<Playlist>>(
       valueListenable: PlaylistsService.instance.playlists,
       builder: (context, playlists, _) {
-        final matchingPlaylists = playlists
-            .where((p) => ArabicText.contains(p.name, _query))
-            .take(5)
-            .toList();
+        final matchingPlaylists =
+            playlists.where((p) => ArabicText.contains(p.name, _query)).take(5).toList();
 
         if (matchingSurahs.isEmpty && matchingPlaylists.isEmpty) {
           return const SizedBox.shrink();
@@ -434,8 +492,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   children: matchingSurahs.map((surah) {
                     final count = reciters
-                        .where((r) =>
-                            r.moshaf.any((m) => m.hasSurah(surah.number)))
+                        .where((r) => r.moshaf.any((m) => m.hasSurah(surah.number)))
                         .length;
                     return Padding(
                       padding: EdgeInsets.only(bottom: 8.h),
@@ -454,19 +511,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   )),
                           child: Padding(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 14.w, vertical: 11.h),
+                            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 11.h),
                             child: Row(
                               children: [
                                 Icon(Icons.menu_book_rounded,
-                                    size: 17.sp,
-                                    color: AppColors.accentGoldSoft),
+                                    size: 17.sp, color: AppColors.accentGoldSoft),
                                 SizedBox(width: 10.w),
                                 Expanded(
-                                    child: Text(surah.arabicName,
-                                        style: AppTypography.body(brightness))),
-                                Text('$count قارئ',
-                                    style: AppTypography.caption(brightness)),
+                                    child: Text(surah.arabicName, style: AppTypography.body(brightness))),
+                                Text('$count قارئ', style: AppTypography.caption(brightness)),
                               ],
                             ),
                           ),
@@ -492,21 +545,17 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: InkWell(
                           borderRadius: BorderRadius.circular(14),
                           onTap: () => Navigator.of(context).push(
-                            fadeScaleRoute(
-                                PlaylistDetailScreen(playlistId: playlist.id)),
+                            fadeScaleRoute(PlaylistDetailScreen(playlistId: playlist.id)),
                           ),
                           child: Padding(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 14.w, vertical: 11.h),
+                            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 11.h),
                             child: Row(
                               children: [
                                 Icon(Icons.queue_music_rounded,
-                                    size: 17.sp,
-                                    color: AppColors.accentGoldSoft),
+                                    size: 17.sp, color: AppColors.accentGoldSoft),
                                 SizedBox(width: 10.w),
                                 Expanded(
-                                    child: Text(playlist.name,
-                                        style: AppTypography.body(brightness))),
+                                    child: Text(playlist.name, style: AppTypography.body(brightness))),
                                 Text('${playlist.items.length} سورة',
                                     style: AppTypography.caption(brightness)),
                               ],
@@ -540,15 +589,13 @@ class _HomeScreenState extends State<HomeScreen> {
         color: AppColors.glassFill(brightness),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: _searchFocused
-              ? AppColors.primaryLight
-              : AppColors.glassBorder(brightness),
+          color: _searchFocused ? AppColors.primaryLight : AppColors.glassBorder(brightness),
           width: _searchFocused ? 1.4 : 1,
         ),
         boxShadow: _searchFocused
             ? [
                 BoxShadow(
-                  color: AppColors.primaryLight.withValues(alpha: 0.18),
+                  color: AppColors.primaryLight.withOpacity(0.18),
                   blurRadius: 16,
                   spreadRadius: 1,
                 ),
@@ -574,8 +621,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 border: InputBorder.none,
                 isDense: true,
                 hintText: 'دور على قارئ بالاسم...',
-                hintStyle:
-                    AppTypography.body(brightness).copyWith(color: secondary),
+                hintStyle: AppTypography.body(brightness).copyWith(color: secondary),
               ),
             ),
           ),
@@ -589,7 +635,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: EdgeInsets.all(3.w),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: secondary.withValues(alpha: 0.15),
+                  color: secondary.withOpacity(0.15),
                 ),
                 child: Icon(Icons.close_rounded, color: secondary, size: 15.sp),
               ),
@@ -599,20 +645,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildQuickAccessRow(
-      Brightness brightness, List<ReciterModel> reciters) {
+  Widget _buildQuickAccessRow(Brightness brightness, List<ReciterModel> reciters) {
     final chips = [
-      (
-        icon: Icons.download_for_offline_rounded,
-        label: 'تحميلاتي',
-        onTap: () =>
-            Navigator.of(context).push(fadeScaleRoute(const DownloadsScreen())),
-      ),
       (
         icon: Icons.queue_music_rounded,
         label: 'قوائمي',
-        onTap: () =>
-            Navigator.of(context).push(fadeScaleRoute(const PlaylistsScreen())),
+        onTap: () => Navigator.of(context).push(fadeScaleRoute(const PlaylistsScreen())),
       ),
       (
         icon: Icons.self_improvement_rounded,
@@ -620,15 +658,14 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: () {
           final hour = DateTime.now().hour;
           final suggested = (hour >= 21 || hour < 6) ? Mood.sleep : Mood.work;
-          Navigator.of(context).push(
-              fadeScaleRoute(MoodScreen(mood: suggested, reciters: reciters)));
+          Navigator.of(context)
+              .push(fadeScaleRoute(MoodScreen(mood: suggested, reciters: reciters)));
         },
       ),
       (
-        icon: Icons.tune_rounded,
-        label: 'الإعدادات',
-        onTap: () =>
-            Navigator.of(context).push(fadeScaleRoute(const SettingsScreen())),
+        icon: Icons.person_rounded,
+        label: 'البروفايل',
+        onTap: () => Navigator.of(context).push(fadeScaleRoute(const ProfileScreen())),
       ),
     ];
 
@@ -648,8 +685,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(chip.icon,
-                        size: 18.sp, color: AppColors.accentGoldSoft),
+                    Icon(chip.icon, size: 18.sp, color: AppColors.accentGoldSoft),
                     SizedBox(height: 4.h),
                     Text(chip.label, style: AppTypography.caption(brightness)),
                   ],
@@ -660,6 +696,93 @@ class _HomeScreenState extends State<HomeScreen> {
           if (chip != chips.last) SizedBox(width: 10.w),
         ],
       ],
+    );
+  }
+
+  Widget _buildKhatmaCard(Brightness brightness) {
+    return ValueListenableBuilder<Set<int>>(
+      valueListenable: KhatmaService.instance.completedSurahs,
+      builder: (context, completed, _) {
+        final progress = completed.length / KhatmaService.totalSurahs;
+        return GestureDetector(
+          onTap: () => Navigator.of(context).push(fadeScaleRoute(const KhatmaScreen())),
+          child: Container(
+            padding: EdgeInsets.all(14.w),
+            decoration: BoxDecoration(
+              color: AppColors.glassFill(brightness),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.glassBorder(brightness)),
+            ),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 40.w,
+                  height: 40.w,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      SizedBox(
+                        width: 40.w,
+                        height: 40.w,
+                        child: CircularProgressIndicator(
+                          value: progress,
+                          strokeWidth: 4,
+                          backgroundColor: AppColors.glassBorder(brightness),
+                          valueColor: AlwaysStoppedAnimation(AppColors.accentGold),
+                        ),
+                      ),
+                      Icon(Icons.auto_stories_rounded, size: 16.sp, color: AppColors.accentGoldSoft),
+                    ],
+                  ),
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('ختمتي', style: AppTypography.body(brightness).copyWith(fontWeight: FontWeight.w700)),
+                      Text(
+                        '${completed.length} من ${KhatmaService.totalSurahs} سورة',
+                        style: AppTypography.caption(brightness),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_left_rounded, color: AppColors.primary, size: 22.sp),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildStreakCard(Brightness brightness) {
+    return ValueListenableBuilder<int>(
+      valueListenable: StreakService.instance.currentStreak,
+      builder: (context, streak, _) {
+        return Container(
+          width: 84.w,
+          padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 8.w),
+          decoration: BoxDecoration(
+            color: AppColors.glassFill(brightness),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.glassBorder(brightness)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(streak > 0 ? '🔥' : '💤', style: TextStyle(fontSize: 22.sp)),
+              SizedBox(height: 4.h),
+              Text(
+                '$streak',
+                style: AppTypography.title(brightness).copyWith(fontWeight: FontWeight.w800),
+              ),
+              Text('يوم متواصل', style: AppTypography.caption(brightness), textAlign: TextAlign.center),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -746,8 +869,7 @@ class _HomeScreenState extends State<HomeScreen> {
           SizedBox(height: 12.h),
           Text('في مشكلة في الاتصال', style: AppTypography.body(brightness)),
           SizedBox(height: 12.h),
-          ElevatedButton(
-              onPressed: _refresh, child: const Text('إعادة المحاولة')),
+          ElevatedButton(onPressed: _refresh, child: const Text('إعادة المحاولة')),
         ],
       ),
     );
@@ -767,72 +889,8 @@ class _SurahBrowseButton extends StatelessWidget {
       button: true,
       label: 'تصفح بالسورة',
       child: GestureDetector(
-        onTap: () => Navigator.of(context)
-            .push(fadeScaleRoute(SurahBrowseScreen(reciters: reciters))),
-        child: Container(
-          width: 40.w,
-          height: 40.w,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: AppColors.glassFill(brightness),
-            border: Border.all(color: AppColors.glassBorder(brightness)),
-          ),
-          child: Icon(
-            Icons.menu_book_rounded,
-            size: 19.sp,
-            color: AppColors.accentGoldSoft,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// زرار البروفايل - بيودّي على شاشة "عن المطوّر".
-class _ProfileButton extends StatelessWidget {
-  final Brightness brightness;
-
-  const _ProfileButton({required this.brightness});
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: 'عن المطوّر',
-      child: GestureDetector(
-        onTap: () =>
-            Navigator.of(context).push(fadeScaleRoute(const AboutScreen())),
-        child: Container(
-          width: 40.w,
-          height: 40.w,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: AppColors.glassFill(brightness),
-            border: Border.all(color: AppColors.glassBorder(brightness)),
-          ),
-          child: Icon(
-            Icons.person_rounded,
-            size: 20.sp,
-            color: brightness == Brightness.dark
-                ? AppColors.textPrimaryDark
-                : AppColors.textPrimaryLight,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// زرار تبديل الوضع الليلي/النهاري، بأيقونة بتتغير بحركة ناعمة.
-class _ThemeToggleButton extends StatelessWidget {
-  final Brightness brightness;
-
-  const _ThemeToggleButton({required this.brightness});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => ThemePickerSheet.show(context),
+      onTap: () => Navigator.of(context)
+          .push(fadeScaleRoute(SurahBrowseScreen(reciters: reciters))),
       child: Container(
         width: 40.w,
         height: 40.w,
@@ -842,10 +900,46 @@ class _ThemeToggleButton extends StatelessWidget {
           border: Border.all(color: AppColors.glassBorder(brightness)),
         ),
         child: Icon(
-          Icons.palette_rounded,
+          Icons.menu_book_rounded,
           size: 19.sp,
           color: AppColors.accentGoldSoft,
         ),
+      ),
+      ),
+    );
+  }
+}
+
+/// زرار البروفايل - بيودّي على شاشة البروفايل (الثيم، التحميلات،
+/// الإعدادات، ختمتك، وعن المطوّر - كل حاجة شخصية في مكان واحد).
+class _ProfileButton extends StatelessWidget {
+  final Brightness brightness;
+
+  const _ProfileButton({required this.brightness});
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'البروفايل',
+      child: GestureDetector(
+      onTap: () => Navigator.of(context).push(fadeScaleRoute(const ProfileScreen())),
+      child: Container(
+        width: 40.w,
+        height: 40.w,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: AppColors.glassFill(brightness),
+          border: Border.all(color: AppColors.glassBorder(brightness)),
+        ),
+        child: Icon(
+          Icons.person_rounded,
+          size: 20.sp,
+          color: brightness == Brightness.dark
+              ? AppColors.textPrimaryDark
+              : AppColors.textPrimaryLight,
+        ),
+      ),
       ),
     );
   }
@@ -903,8 +997,7 @@ class _ContinueListeningCard extends StatelessWidget {
   final QueueItem item;
   final bool isFavoriteCard;
 
-  const _ContinueListeningCard(
-      {required this.item, this.isFavoriteCard = false});
+  const _ContinueListeningCard({required this.item, this.isFavoriteCard = false});
 
   @override
   Widget build(BuildContext context) {
@@ -935,8 +1028,7 @@ class _ContinueListeningCard extends StatelessWidget {
                 children: [
                   Text(
                     item.surahArabicName,
-                    style: AppTypography.body(brightness)
-                        .copyWith(fontWeight: FontWeight.w700),
+                    style: AppTypography.body(brightness).copyWith(fontWeight: FontWeight.w700),
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
@@ -948,9 +1040,7 @@ class _ContinueListeningCard extends StatelessWidget {
               ),
             ),
             Icon(
-              isFavoriteCard
-                  ? Icons.favorite_rounded
-                  : Icons.play_circle_fill_rounded,
+              isFavoriteCard ? Icons.favorite_rounded : Icons.play_circle_fill_rounded,
               color: isFavoriteCard ? AppColors.error : AppColors.primary,
               size: 22.sp,
             ),
@@ -976,8 +1066,7 @@ class _ReciterFeatureCardState extends State<_ReciterFeatureCard> {
   double _scale = 1.0;
 
   void _open(BuildContext context) {
-    Navigator.of(context)
-        .push(fadeScaleRoute(ReciterDetailScreen(reciter: widget.reciter)));
+    Navigator.of(context).push(fadeScaleRoute(ReciterDetailScreen(reciter: widget.reciter)));
   }
 
   @override
@@ -1012,8 +1101,7 @@ class _ReciterFeatureCardState extends State<_ReciterFeatureCard> {
               SizedBox(height: 10.h),
               Text(
                 reciter.name,
-                style: AppTypography.caption(brightness)
-                    .copyWith(fontWeight: FontWeight.w600),
+                style: AppTypography.caption(brightness).copyWith(fontWeight: FontWeight.w600),
                 maxLines: 2,
                 textAlign: TextAlign.center,
                 overflow: TextOverflow.ellipsis,
@@ -1054,20 +1142,16 @@ class _ReciterListTile extends StatelessWidget {
               ),
               SizedBox(width: 12.w),
               Expanded(
-                child:
-                    Text(reciter.name, style: AppTypography.body(brightness)),
+                child: Text(reciter.name, style: AppTypography.body(brightness)),
               ),
               ValueListenableBuilder<Set<int>>(
                 valueListenable: FavoritesService.instance.favorites,
                 builder: (context, favorites, _) {
                   final isFav = favorites.contains(reciter.id);
                   return IconButton(
-                    onPressed: () =>
-                        FavoritesService.instance.toggle(reciter.id),
+                    onPressed: () => FavoritesService.instance.toggle(reciter.id),
                     icon: Icon(
-                      isFav
-                          ? Icons.favorite_rounded
-                          : Icons.favorite_border_rounded,
+                      isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                       color: isFav
                           ? AppColors.error
                           : (brightness == Brightness.dark
@@ -1078,8 +1162,7 @@ class _ReciterListTile extends StatelessWidget {
                   );
                 },
               ),
-              Icon(Icons.chevron_left_rounded,
-                  color: AppColors.primary, size: 24.sp),
+              Icon(Icons.chevron_left_rounded, color: AppColors.primary, size: 24.sp),
             ],
           ),
         ),

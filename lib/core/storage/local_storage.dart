@@ -64,4 +64,11 @@ class StorageKeys {
   static const String defaultSleepMinutes = 'default_sleep_minutes';
   static const String wifiOnlyDownload = 'wifi_only_download';
   static const String volumeBoosts = 'volume_boosts';
+  static const String khatmaProgress = 'khatma_progress';
+  static const String khatmaCount = 'khatma_count';
+  static const String hasSeenOnboarding = 'has_seen_onboarding';
+  static const String favoriteAyahs = 'favorite_ayahs';
+  static const String streakLastDate = 'streak_last_date';
+  static const String streakCurrent = 'streak_current';
+  static const String streakLongest = 'streak_longest';
 }

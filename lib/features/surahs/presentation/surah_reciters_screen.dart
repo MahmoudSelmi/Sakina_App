@@ -73,8 +73,7 @@ class SurahRecitersScreen extends StatelessWidget {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: AppColors.glassFill(brightness),
-                          border: Border.all(
-                              color: AppColors.glassBorder(brightness)),
+                          border: Border.all(color: AppColors.glassBorder(brightness)),
                         ),
                         child: Icon(Icons.arrow_forward_rounded, size: 20.sp),
                       ),
@@ -84,10 +83,8 @@ class SurahRecitersScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('سورة $surahName',
-                              style: AppTypography.title(brightness)),
-                          Text('${entries.length} تسجيل متاح',
-                              style: AppTypography.caption(brightness)),
+                          Text('سورة $surahName', style: AppTypography.title(brightness)),
+                          Text('${entries.length} تسجيل متاح', style: AppTypography.caption(brightness)),
                         ],
                       ),
                     ),
@@ -110,10 +107,7 @@ class SurahRecitersScreen extends StatelessWidget {
                     return StaggeredFadeIn(
                       index: index,
                       stepDelay: const Duration(milliseconds: 20),
-                      child: _EntryTile(
-                          reciter: entry.reciter,
-                          moshaf: entry.moshaf,
-                          item: item),
+                      child: _EntryTile(reciter: entry.reciter, moshaf: entry.moshaf, item: item),
                     );
                   },
                 ),
@@ -131,8 +125,7 @@ class _EntryTile extends StatelessWidget {
   final MoshafModel moshaf;
   final QueueItem item;
 
-  const _EntryTile(
-      {required this.reciter, required this.moshaf, required this.item});
+  const _EntryTile({required this.reciter, required this.moshaf, required this.item});
 
   @override
   Widget build(BuildContext context) {
@@ -148,8 +141,7 @@ class _EntryTile extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
           child: Row(
             children: [
-              ReciterAvatar(
-                  reciterId: reciter.id, letter: reciter.letter, size: 44.w),
+              ReciterAvatar(reciterId: reciter.id, letter: reciter.letter, size: 44.w),
               SizedBox(width: 12.w),
               Expanded(
                 child: Column(
@@ -164,8 +156,7 @@ class _EntryTile extends StatelessWidget {
                           color: AppColors.accentGoldSoft,
                         ),
                         SizedBox(width: 4.w),
-                        Text(moshaf.name,
-                            style: AppTypography.caption(brightness)),
+                        Text(moshaf.name, style: AppTypography.caption(brightness)),
                       ],
                     ),
                   ],
@@ -176,12 +167,9 @@ class _EntryTile extends StatelessWidget {
                 builder: (context, favs, _) {
                   final isFav = favs.containsKey(item.key);
                   return IconButton(
-                    onPressed: () =>
-                        SurahFavoritesService.instance.toggle(item),
+                    onPressed: () => SurahFavoritesService.instance.toggle(item),
                     icon: Icon(
-                      isFav
-                          ? Icons.favorite_rounded
-                          : Icons.favorite_border_rounded,
+                      isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                       color: isFav ? AppColors.error : AppColors.accentGoldSoft,
                       size: 19.sp,
                     ),
@@ -193,11 +181,9 @@ class _EntryTile extends StatelessWidget {
                 height: 34.w,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                      colors: [AppColors.primaryLight, AppColors.primary]),
+                  gradient: LinearGradient(colors: [AppColors.primaryLight, AppColors.primary]),
                 ),
-                child: Icon(Icons.play_arrow_rounded,
-                    color: Colors.white, size: 18.sp),
+                child: Icon(Icons.play_arrow_rounded, color: Colors.white, size: 18.sp),
               ),
             ],
           ),

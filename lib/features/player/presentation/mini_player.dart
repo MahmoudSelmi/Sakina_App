@@ -53,9 +53,7 @@ class MiniPlayer extends StatelessWidget {
                     children: [
                       NowPlayingArt(
                         reciterId: item.reciterId,
-                        letter: item.reciterName.isNotEmpty
-                            ? item.reciterName[0]
-                            : '؟',
+                        letter: item.reciterName.isNotEmpty ? item.reciterName[0] : '؟',
                         size: 40.w,
                         isPlaying: state.isPlaying,
                       ),
@@ -96,30 +94,25 @@ class MiniPlayer extends StatelessWidget {
                         button: true,
                         label: state.isPlaying ? 'إيقاف' : 'تشغيل',
                         child: GestureDetector(
-                          onTap: () {
-                            HapticFeedback.mediumImpact();
-                            context.read<PlayerCubit>().togglePlayPause();
-                          },
-                          child: Container(
-                            width: 42.w,
-                            height: 42.w,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                colors: [
-                                  AppColors.primaryLight,
-                                  AppColors.primary
-                                ],
-                              ),
-                            ),
-                            child: Icon(
-                              state.isPlaying
-                                  ? Icons.pause_rounded
-                                  : Icons.play_arrow_rounded,
-                              size: 24.sp,
-                              color: Colors.white,
+                        onTap: () {
+                          HapticFeedback.mediumImpact();
+                          context.read<PlayerCubit>().togglePlayPause();
+                        },
+                        child: Container(
+                          width: 42.w,
+                          height: 42.w,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: [AppColors.primaryLight, AppColors.primary],
                             ),
                           ),
+                          child: Icon(
+                            state.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                            size: 24.sp,
+                            color: Colors.white,
+                          ),
+                        ),
                         ),
                       ),
                       IconButton(

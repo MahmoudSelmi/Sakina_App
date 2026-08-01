@@ -52,8 +52,8 @@ class AppPalette {
 
   List<Color> get goldGradient => [accentGoldSoft, accentGold];
 
-  Color glassFill() => glassBase.withValues(alpha: 0.06);
-  Color glassBorder() => glassBase.withValues(alpha: 0.10);
+  Color glassFill() => glassBase.withOpacity(0.06);
+  Color glassBorder() => glassBase.withOpacity(0.10);
 
   /// أول لونين للمعاينة الصغيرة في شاشة اختيار الثيم.
   List<Color> get previewColors => [bg, primary];

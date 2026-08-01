@@ -19,6 +19,10 @@ class AppLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // بنقرا الثيم هنا (حتى من غير ما نستخدم القيمة) عشان الودجت يتربط
+    // بالثيم الحالي ويتجدد لوحده لما المستخدم يغيّر الثيم، حتى لو كان
+    // مستخدم كـ const جوه شاشة تانية.
+    Theme.of(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -27,14 +31,14 @@ class AppLogo extends StatelessWidget {
           height: iconSize.w,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            gradient:  LinearGradient(
+            gradient: LinearGradient(
               colors: AppColors.goldGradient,
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             boxShadow: [
               BoxShadow(
-                color: AppColors.accentGold.withValues(alpha: 0.45),
+                color: AppColors.accentGold.withOpacity(0.45),
                 blurRadius: 16,
                 spreadRadius: 0.5,
               ),
@@ -44,14 +48,14 @@ class AppLogo extends StatelessWidget {
             child: Icon(
               Icons.mosque_rounded,
               size: iconSize.w * 0.56,
-              color: Colors.black.withValues(alpha: 0.82),
+              color: Colors.black.withOpacity(0.82),
             ),
           ),
         ),
         if (showWordmark) ...[
           SizedBox(width: 10.w),
           ShaderMask(
-            shaderCallback: (bounds) =>  LinearGradient(
+            shaderCallback: (bounds) => LinearGradient(
               colors: AppColors.goldGradient,
             ).createShader(bounds),
             child: Text(

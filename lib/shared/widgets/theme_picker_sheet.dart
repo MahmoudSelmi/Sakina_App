@@ -48,8 +48,7 @@ class ThemePickerSheet extends StatelessWidget {
               SizedBox(height: 16.h),
               Text('اختار ثيم التطبيق', style: AppTypography.title(brightness)),
               SizedBox(height: 4.h),
-              Text('كل ثيم بيتطبّق فورًا على كل الشاشات',
-                  style: AppTypography.caption(brightness)),
+              Text('كل ثيم بيتطبّق فورًا على كل الشاشات', style: AppTypography.caption(brightness)),
               SizedBox(height: 18.h),
               GridView.count(
                 crossAxisCount: 2,
@@ -81,8 +80,7 @@ class _ThemeCard extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  const _ThemeCard(
-      {required this.palette, required this.selected, required this.onTap});
+  const _ThemeCard({required this.palette, required this.selected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -103,11 +101,7 @@ class _ThemeCard extends StatelessWidget {
             width: 2.5,
           ),
           boxShadow: selected
-              ? [
-                  BoxShadow(
-                      color: palette.accentGold.withValues(alpha: 0.35),
-                      blurRadius: 14)
-                ]
+              ? [BoxShadow(color: palette.accentGold.withOpacity(0.35), blurRadius: 14)]
               : null,
         ),
         child: Column(
@@ -127,13 +121,11 @@ class _ThemeCard extends StatelessWidget {
                 Container(
                   width: 22.w,
                   height: 22.w,
-                  decoration: BoxDecoration(
-                      shape: BoxShape.circle, color: palette.primary),
+                  decoration: BoxDecoration(shape: BoxShape.circle, color: palette.primary),
                 ),
                 const Spacer(),
                 if (selected)
-                  Icon(Icons.check_circle_rounded,
-                      color: palette.accentGold, size: 18.sp),
+                  Icon(Icons.check_circle_rounded, color: palette.accentGold, size: 18.sp),
               ],
             ),
             const Spacer(),
