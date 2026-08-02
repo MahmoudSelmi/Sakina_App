@@ -19,7 +19,8 @@ class ReassuranceBanner extends StatefulWidget {
 class _ReassuranceBannerState extends State<ReassuranceBanner>
     with SingleTickerProviderStateMixin {
   static const List<_Ayah> _ayat = [
-    _Ayah('لَا يُكَلِّفُ اللَّهُ نَفْسًا إِلَّا وُسْعَهَا', 'سورة البقرة - 286'),
+    _Ayah(
+        'لَا يُكَلِّفُ اللَّهُ نَفْسًا إِلَّا وُسْعَهَا', 'سورة البقرة - 286'),
     _Ayah('إِنَّ مَعَ الْعُسْرِ يُسْرًا', 'سورة الشرح - 6'),
     _Ayah('حَسْبُنَا اللَّهُ وَنِعْمَ الْوَكِيلُ', 'سورة آل عمران - 173'),
     _Ayah('وَبَشِّرِ الصَّابِرِينَ', 'سورة البقرة - 155'),
@@ -75,7 +76,7 @@ class _ReassuranceBannerState extends State<ReassuranceBanner>
                 gradient: LinearGradient(colors: AppColors.goldGradient),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.accentGold.withOpacity(0.5),
+                    color: AppColors.accentGold.withValues(alpha: 0.5),
                     blurRadius: 10,
                     spreadRadius: 1,
                   ),
@@ -100,7 +101,8 @@ class _ReassuranceBannerState extends State<ReassuranceBanner>
                   ),
                 ),
                 SizedBox(height: 3.h),
-                Text(_current.reference, style: AppTypography.caption(brightness)),
+                Text(_current.reference,
+                    style: AppTypography.caption(brightness)),
               ],
             ),
           ),

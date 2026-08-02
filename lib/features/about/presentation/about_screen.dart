@@ -66,7 +66,8 @@ class AboutScreen extends StatelessWidget {
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.accentGold.withOpacity(0.35),
+                              color:
+                                  AppColors.accentGold.withValues(alpha: 0.35),
                               blurRadius: 26,
                               spreadRadius: 1,
                             ),
@@ -75,11 +76,12 @@ class AboutScreen extends StatelessWidget {
                         child: Icon(
                           Icons.code_rounded,
                           size: 42.sp,
-                          color: Colors.black.withOpacity(0.8),
+                          color: Colors.black.withValues(alpha: 0.8),
                         ),
                       ),
                       SizedBox(height: 16.h),
-                      Text('تم التطوير بواسطة', style: AppTypography.body(brightness)),
+                      Text('تم التطوير بواسطة',
+                          style: AppTypography.body(brightness)),
                       SizedBox(height: 4.h),
                       Text(
                         'Mahmoud Selmi',
@@ -99,7 +101,8 @@ class AboutScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: AppColors.glassFill(brightness),
                     borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: AppColors.glassBorder(brightness)),
+                    border:
+                        Border.all(color: AppColors.glassBorder(brightness)),
                   ),
                   child: Column(
                     children: [
@@ -136,7 +139,8 @@ class AboutScreen extends StatelessWidget {
               SizedBox(height: 32.h),
               StaggeredFadeIn(
                 index: 2,
-                child: Text('تابعني على', style: AppTypography.title(brightness)),
+                child:
+                    Text('تابعني على', style: AppTypography.title(brightness)),
               ),
               SizedBox(height: 14.h),
               StaggeredFadeIn(
@@ -172,7 +176,9 @@ class AboutScreen extends StatelessWidget {
                 child: _SocialTile(
                   brightness: brightness,
                   icon: Icons.data_object_rounded,
-                  iconColor: brightness == Brightness.dark ? Colors.white : Colors.black,
+                  iconColor: brightness == Brightness.dark
+                      ? Colors.white
+                      : Colors.black,
                   title: 'جيت هاب',
                   subtitle: 'مشاريعي وأكوادي',
                   onTap: () => _open('https://github.com/MahmoudSelmi'),
@@ -243,7 +249,7 @@ class _SocialTile extends StatelessWidget {
                 height: 44.w,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: iconColor.withOpacity(0.15),
+                  color: iconColor.withValues(alpha: 0.15),
                 ),
                 child: Icon(icon, color: iconColor, size: 22.sp),
               ),
@@ -252,14 +258,16 @@ class _SocialTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: AppTypography.body(brightness).copyWith(
+                    Text(title,
+                        style: AppTypography.body(brightness).copyWith(
                           fontWeight: FontWeight.w700,
                         )),
                     Text(subtitle, style: AppTypography.caption(brightness)),
                   ],
                 ),
               ),
-              Icon(Icons.chevron_left_rounded, color: AppColors.primary, size: 22.sp),
+              Icon(Icons.chevron_left_rounded,
+                  color: AppColors.primary, size: 22.sp),
             ],
           ),
         ),

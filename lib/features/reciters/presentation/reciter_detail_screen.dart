@@ -47,10 +47,13 @@ class _ReciterDetailScreenState extends State<ReciterDetailScreen> {
     final moshaf = _selectedMoshaf;
     if (moshaf == null) return;
     final queue = moshaf.surahList
-        .map((s) => QueueItem.fromReciter(reciter: widget.reciter, moshaf: moshaf, surahNumber: s))
+        .map((s) => QueueItem.fromReciter(
+            reciter: widget.reciter, moshaf: moshaf, surahNumber: s))
         .toList();
     final startIndex = queue.indexWhere((q) => q.surahNumber == surahNumber);
-    context.read<PlayerCubit>().playQueue(queue, startIndex: startIndex < 0 ? 0 : startIndex);
+    context
+        .read<PlayerCubit>()
+        .playQueue(queue, startIndex: startIndex < 0 ? 0 : startIndex);
   }
 
   void _shareReciter() {
@@ -67,21 +70,24 @@ class _ReciterDetailScreenState extends State<ReciterDetailScreen> {
     if (!allowed) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('التحميل مفعّل على الواي فاي بس دلوقتي - وصّل واي فاي وجرّب تاني')),
+          const SnackBar(
+              content: Text(
+                  'التحميل مفعّل على الواي فاي بس دلوقتي - وصّل واي فاي وجرّب تاني')),
         );
       }
       return;
     }
 
     final items = moshaf.surahList
-        .map((s) => QueueItem.fromReciter(reciter: widget.reciter, moshaf: moshaf, surahNumber: s))
+        .map((s) => QueueItem.fromReciter(
+            reciter: widget.reciter, moshaf: moshaf, surahNumber: s))
         .where((item) => !DownloadService.instance.isDownloaded(item.key))
         .toList();
 
     if (items.isEmpty) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('كل السور محمّلة عندك بالفعل')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('كل السور محمّلة عندك بالفعل')));
       }
       return;
     }
@@ -97,7 +103,8 @@ class _ReciterDetailScreenState extends State<ReciterDetailScreen> {
         title: const Text('جاري تحميل كل السور...'),
         content: ValueListenableBuilder<int>(
           valueListenable: progress,
-          builder: (context, done, _) => Text('اتحمّل $done من ${items.length}'),
+          builder: (context, done, _) =>
+              Text('اتحمّل $done من ${items.length}'),
         ),
         actions: [
           TextButton(
@@ -119,8 +126,8 @@ class _ReciterDetailScreenState extends State<ReciterDetailScreen> {
 
     if (!cancelled && context.mounted) {
       Navigator.of(context, rootNavigator: true).maybePop();
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('اتحمّلت ${items.length} سورة بنجاح')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('اتحمّلت ${items.length} سورة بنجاح')));
     }
   }
 
@@ -167,11 +174,15 @@ class _ReciterDetailScreenState extends State<ReciterDetailScreen> {
                           builder: (context, favorites, _) {
                             final isFav = favorites.contains(reciter.id);
                             return _CircleIconButton(
-                              icon: isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                              icon: isFav
+                                  ? Icons.favorite_rounded
+                                  : Icons.favorite_border_rounded,
                               brightness: brightness,
                               iconColor: isFav ? AppColors.error : null,
-                              semanticLabel: isFav ? 'إزالة من المفضلة' : 'إضافة للمفضلة',
-                              onTap: () => FavoritesService.instance.toggle(reciter.id),
+                              semanticLabel:
+                                  isFav ? 'إزالة من المفضلة' : 'إضافة للمفضلة',
+                              onTap: () =>
+                                  FavoritesService.instance.toggle(reciter.id),
                             );
                           },
                         ),
@@ -219,7 +230,8 @@ class _ReciterDetailScreenState extends State<ReciterDetailScreen> {
                           final selected = index == _selectedMoshafIndex;
                           final m = reciter.moshaf[index];
                           return GestureDetector(
-                            onTap: () => setState(() => _selectedMoshafIndex = index),
+                            onTap: () =>
+                                setState(() => _selectedMoshafIndex = index),
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 220),
                               curve: Curves.easeOut,
@@ -232,7 +244,9 @@ class _ReciterDetailScreenState extends State<ReciterDetailScreen> {
                                         AppColors.primary,
                                       ])
                                     : null,
-                                color: selected ? null : AppColors.glassFill(brightness),
+                                color: selected
+                                    ? null
+                                    : AppColors.glassFill(brightness),
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
                                   color: selected
@@ -242,7 +256,8 @@ class _ReciterDetailScreenState extends State<ReciterDetailScreen> {
                                 boxShadow: selected
                                     ? [
                                         BoxShadow(
-                                          color: AppColors.primary.withOpacity(0.28),
+                                          color: AppColors.primary
+                                              .withValues(alpha: 0.28),
                                           blurRadius: 12,
                                           offset: const Offset(0, 4),
                                         ),
@@ -255,12 +270,15 @@ class _ReciterDetailScreenState extends State<ReciterDetailScreen> {
                                   Icon(
                                     MoshafStyle.iconFor(m.name),
                                     size: 15.sp,
-                                    color: selected ? Colors.white : AppColors.accentGoldSoft,
+                                    color: selected
+                                        ? Colors.white
+                                        : AppColors.accentGoldSoft,
                                   ),
                                   SizedBox(width: 6.w),
                                   Text(
                                     m.name,
-                                    style: AppTypography.label(brightness).copyWith(
+                                    style: AppTypography.label(brightness)
+                                        .copyWith(
                                       color: selected ? Colors.white : null,
                                     ),
                                   ),
@@ -278,7 +296,8 @@ class _ReciterDetailScreenState extends State<ReciterDetailScreen> {
                     child: Padding(
                       padding: EdgeInsets.all(32.w),
                       child: Center(
-                        child: Text('لا توجد سور متاحة لهذه الرواية', style: AppTypography.body(brightness)),
+                        child: Text('لا توجد سور متاحة لهذه الرواية',
+                            style: AppTypography.body(brightness)),
                       ),
                     ),
                   )
@@ -364,7 +383,8 @@ class _SurahRow extends StatelessWidget {
     required this.onTap,
   });
 
-  QueueItem get _item => QueueItem.fromReciter(reciter: reciter, moshaf: moshaf, surahNumber: surahNumber);
+  QueueItem get _item => QueueItem.fromReciter(
+      reciter: reciter, moshaf: moshaf, surahNumber: surahNumber);
 
   @override
   Widget build(BuildContext context) {
@@ -373,13 +393,15 @@ class _SurahRow extends StatelessWidget {
     final item = _item;
 
     return BlocBuilder<PlayerCubit, PlayerState>(
-      buildWhen: (prev, curr) => prev.currentItem != curr.currentItem || prev.isPlaying != curr.isPlaying,
+      buildWhen: (prev, curr) =>
+          prev.currentItem != curr.currentItem ||
+          prev.isPlaying != curr.isPlaying,
       builder: (context, playerState) {
         final isCurrent = playerState.currentItem == item;
 
         return Material(
           color: isCurrent
-              ? AppColors.primary.withOpacity(0.14)
+              ? AppColors.primary.withValues(alpha: 0.14)
               : AppColors.glassFill(brightness),
           borderRadius: BorderRadius.circular(16),
           child: InkWell(
@@ -397,7 +419,7 @@ class _SurahRow extends StatelessWidget {
                       shape: BoxShape.circle,
                       color: isCurrent
                           ? AppColors.primary
-                          : AppColors.primary.withOpacity(0.12),
+                          : AppColors.primary.withValues(alpha: 0.12),
                     ),
                     child: Text(
                       '$surahNumber',
@@ -413,7 +435,8 @@ class _SurahRow extends StatelessWidget {
                       surah.arabicName,
                       overflow: TextOverflow.ellipsis,
                       style: AppTypography.body(brightness).copyWith(
-                        fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w400,
+                        fontWeight:
+                            isCurrent ? FontWeight.w700 : FontWeight.w400,
                         color: isCurrent ? AppColors.primary : null,
                       ),
                     ),
@@ -423,12 +446,17 @@ class _SurahRow extends StatelessWidget {
                     builder: (context, favs, _) {
                       final isFav = favs.containsKey(item.key);
                       return GestureDetector(
-                        onTap: () => SurahFavoritesService.instance.toggle(item),
+                        onTap: () =>
+                            SurahFavoritesService.instance.toggle(item),
                         child: Padding(
                           padding: EdgeInsets.symmetric(horizontal: 4.w),
                           child: Icon(
-                            isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                            color: isFav ? AppColors.error : AppColors.accentGoldSoft,
+                            isFav
+                                ? Icons.favorite_rounded
+                                : Icons.favorite_border_rounded,
+                            color: isFav
+                                ? AppColors.error
+                                : AppColors.accentGoldSoft,
                             size: 18.sp,
                           ),
                         ),
@@ -457,8 +485,8 @@ class _SurahRow extends StatelessWidget {
                         colors: isCurrent
                             ? [AppColors.primaryLight, AppColors.primary]
                             : [
-                                AppColors.primary.withOpacity(0.16),
-                                AppColors.primary.withOpacity(0.16),
+                                AppColors.primary.withValues(alpha: 0.16),
+                                AppColors.primary.withValues(alpha: 0.16),
                               ],
                       ),
                     ),
@@ -496,7 +524,8 @@ class _DownloadButton extends StatelessWidget {
         if (downloaded) {
           return IconButton(
             onPressed: () => DownloadService.instance.deleteDownload(item.key),
-            icon: Icon(Icons.download_done_rounded, color: AppColors.success, size: 20.sp),
+            icon: Icon(Icons.download_done_rounded,
+                color: AppColors.success, size: 20.sp),
             tooltip: 'محمّلة - اضغط للحذف',
           );
         }

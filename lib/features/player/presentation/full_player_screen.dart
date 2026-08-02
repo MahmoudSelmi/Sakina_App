@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../shared/widgets/ambient_sound_sheet.dart';
 import '../../../shared/widgets/now_playing_visuals.dart';
 import '../../../shared/widgets/page_transitions.dart';
 import '../../downloads/data/download_service.dart';
@@ -271,7 +272,7 @@ class _FullPlayerScreenState extends State<FullPlayerScreen>
                                       boxShadow: [
                                         BoxShadow(
                                           color: AppColors.primary
-                                              .withOpacity(0.4),
+                                              .withValues(alpha: 0.4),
                                           blurRadius: 20,
                                           spreadRadius: 1,
                                         ),
@@ -338,6 +339,12 @@ class _FullPlayerScreenState extends State<FullPlayerScreen>
                                       Icons.volume_up_rounded,
                                       'مستوى الصوت', () {
                                     _showVolumeBoostSheet(context, item);
+                                  }),
+                                  _bottomAction(
+                                      context, Icons.spa_rounded, 'صوت طبيعة',
+                                      () {
+                                    AmbientSoundSheet.show(context,
+                                        mainIsPlaying: state.isPlaying);
                                   }),
                                   _FavoriteBottomAction(
                                       reciterId: item.reciterId),

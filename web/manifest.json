@@ -1,6 +1,6 @@
 {
-    "name": "sakina_app",
-    "short_name": "sakina_app",
+    "name": "quran_premium",
+    "short_name": "quran_premium",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

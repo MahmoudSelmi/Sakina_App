@@ -38,7 +38,7 @@ class AppLogo extends StatelessWidget {
             ),
             boxShadow: [
               BoxShadow(
-                color: AppColors.accentGold.withOpacity(0.45),
+                color: AppColors.accentGold.withValues(alpha: 0.45),
                 blurRadius: 16,
                 spreadRadius: 0.5,
               ),
@@ -48,7 +48,7 @@ class AppLogo extends StatelessWidget {
             child: Icon(
               Icons.mosque_rounded,
               size: iconSize.w * 0.56,
-              color: Colors.black.withOpacity(0.82),
+              color: Colors.black.withValues(alpha: 0.82),
             ),
           ),
         ),

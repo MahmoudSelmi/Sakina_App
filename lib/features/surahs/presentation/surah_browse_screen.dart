@@ -65,28 +65,32 @@ class _SurahBrowseScreenState extends State<SurahBrowseScreen> {
                   children: [
                     _BackCircle(brightness: brightness),
                     SizedBox(width: 12.w),
-                    Text('تصفح بالسورة', style: AppTypography.title(brightness)),
+                    Text('تصفح بالسورة',
+                        style: AppTypography.title(brightness)),
                   ],
                 ),
               ),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.w),
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
                   decoration: BoxDecoration(
                     color: AppColors.glassFill(brightness),
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: AppColors.glassBorder(brightness)),
+                    border:
+                        Border.all(color: AppColors.glassBorder(brightness)),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.search_rounded, size: 20.sp, color: AppColors.accentGoldSoft),
+                      Icon(Icons.search_rounded,
+                          size: 20.sp, color: AppColors.accentGoldSoft),
                       SizedBox(width: 10.w),
                       Expanded(
                         child: TextField(
                           controller: _controller,
                           style: AppTypography.body(brightness),
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             border: InputBorder.none,
                             isDense: true,
                             hintText: 'دور على سورة بالاسم أو الرقم...',
@@ -207,14 +211,16 @@ class _SurahTile extends StatelessWidget {
                   ),
                 ),
                 SizedBox(width: 14.w),
-                Expanded(child: Text(name, style: AppTypography.body(brightness))),
+                Expanded(
+                    child: Text(name, style: AppTypography.body(brightness))),
                 Text(
                   disabled ? 'مفيش تسجيلات' : '$readerCount قارئ',
                   style: AppTypography.caption(brightness),
                 ),
                 SizedBox(width: 6.w),
                 if (!disabled)
-                  Icon(Icons.chevron_left_rounded, color: AppColors.primary, size: 22.sp),
+                  Icon(Icons.chevron_left_rounded,
+                      color: AppColors.primary, size: 22.sp),
               ],
             ),
           ),

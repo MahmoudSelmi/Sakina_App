@@ -20,13 +20,16 @@ class SettingsScreen extends StatelessWidget {
         backgroundColor: brightness == Brightness.dark
             ? AppColors.darkSurfaceElevated
             : AppColors.lightSurface,
-        title: Text('مسح كل التحميلات؟', style: AppTypography.title(brightness)),
+        title:
+            Text('مسح كل التحميلات؟', style: AppTypography.title(brightness)),
         content: Text(
           'هيتم حذف كل السور المحمّلة من الجهاز نهائيًا.',
           style: AppTypography.body(brightness),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('إلغاء')),
+          TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('إلغاء')),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: Text('مسح الكل', style: TextStyle(color: AppColors.error)),
@@ -73,7 +76,8 @@ class SettingsScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: AppColors.glassFill(brightness),
-                        border: Border.all(color: AppColors.glassBorder(brightness)),
+                        border: Border.all(
+                            color: AppColors.glassBorder(brightness)),
                       ),
                       child: Icon(Icons.arrow_forward_rounded, size: 20.sp),
                     ),
@@ -94,23 +98,32 @@ class SettingsScreen extends StatelessWidget {
                     children: _speeds.map((s) {
                       final selected = s == speed;
                       return GestureDetector(
-                        onTap: () => SettingsService.instance.setDefaultSpeed(s),
+                        onTap: () =>
+                            SettingsService.instance.setDefaultSpeed(s),
                         child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 9.h),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 16.w, vertical: 9.h),
                           decoration: BoxDecoration(
                             gradient: selected
-                                ? LinearGradient(colors: [AppColors.primaryLight, AppColors.primary])
+                                ? LinearGradient(colors: [
+                                    AppColors.primaryLight,
+                                    AppColors.primary
+                                  ])
                                 : null,
-                            color: selected ? null : AppColors.glassFill(brightness),
+                            color: selected
+                                ? null
+                                : AppColors.glassFill(brightness),
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: selected ? AppColors.primary : AppColors.glassBorder(brightness),
+                              color: selected
+                                  ? AppColors.primary
+                                  : AppColors.glassBorder(brightness),
                             ),
                           ),
                           child: Text(
                             '${s}x',
-                            style: AppTypography.body(brightness)
-                                .copyWith(color: selected ? Colors.white : null),
+                            style: AppTypography.body(brightness).copyWith(
+                                color: selected ? Colors.white : null),
                           ),
                         ),
                       );
@@ -130,23 +143,32 @@ class SettingsScreen extends StatelessWidget {
                     children: _sleepOptions.map((m) {
                       final selected = m == minutes;
                       return GestureDetector(
-                        onTap: () => SettingsService.instance.setDefaultSleepMinutes(m),
+                        onTap: () =>
+                            SettingsService.instance.setDefaultSleepMinutes(m),
                         child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 9.h),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 16.w, vertical: 9.h),
                           decoration: BoxDecoration(
                             gradient: selected
-                                ? LinearGradient(colors: [AppColors.primaryLight, AppColors.primary])
+                                ? LinearGradient(colors: [
+                                    AppColors.primaryLight,
+                                    AppColors.primary
+                                  ])
                                 : null,
-                            color: selected ? null : AppColors.glassFill(brightness),
+                            color: selected
+                                ? null
+                                : AppColors.glassFill(brightness),
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: selected ? AppColors.primary : AppColors.glassBorder(brightness),
+                              color: selected
+                                  ? AppColors.primary
+                                  : AppColors.glassBorder(brightness),
                             ),
                           ),
                           child: Text(
                             m == null ? 'من غير مؤقت' : '$m دقيقة',
-                            style: AppTypography.body(brightness)
-                                .copyWith(color: selected ? Colors.white : null),
+                            style: AppTypography.body(brightness).copyWith(
+                                color: selected ? Colors.white : null),
                           ),
                         ),
                       );
@@ -161,39 +183,47 @@ class SettingsScreen extends StatelessWidget {
                 valueListenable: SettingsService.instance.wifiOnlyDownload,
                 builder: (context, wifiOnly, _) {
                   return Container(
-                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
                     decoration: BoxDecoration(
                       color: AppColors.glassFill(brightness),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.glassBorder(brightness)),
+                      border:
+                          Border.all(color: AppColors.glassBorder(brightness)),
                     ),
                     child: SwitchListTile(
                       contentPadding: EdgeInsets.zero,
                       value: wifiOnly,
-                      onChanged: (v) => SettingsService.instance.setWifiOnlyDownload(v),
-                      activeColor: AppColors.primary,
-                      title: Text('التحميل على الواي فاي بس', style: AppTypography.body(brightness)),
-                      subtitle: Text('توفير استهلاك الإنترنت', style: AppTypography.caption(brightness)),
+                      onChanged: (v) =>
+                          SettingsService.instance.setWifiOnlyDownload(v),
+                      activeThumbColor: AppColors.primary,
+                      title: Text('التحميل على الواي فاي بس',
+                          style: AppTypography.body(brightness)),
+                      subtitle: Text('توفير استهلاك الإنترنت',
+                          style: AppTypography.caption(brightness)),
                     ),
                   );
                 },
               ),
               SizedBox(height: 10.h),
               Material(
-                color: AppColors.error.withOpacity(0.1),
+                color: AppColors.error.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(16),
                   onTap: () => _confirmClearDownloads(context),
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
                     child: Row(
                       children: [
-                        Icon(Icons.delete_sweep_rounded, color: AppColors.error, size: 20.sp),
+                        Icon(Icons.delete_sweep_rounded,
+                            color: AppColors.error, size: 20.sp),
                         SizedBox(width: 10.w),
                         Text(
                           'مسح كل التحميلات',
-                          style: AppTypography.body(brightness).copyWith(color: AppColors.error),
+                          style: AppTypography.body(brightness)
+                              .copyWith(color: AppColors.error),
                         ),
                       ],
                     ),
@@ -210,7 +240,8 @@ class SettingsScreen extends StatelessWidget {
   Widget _sectionLabel(Brightness brightness, String text) {
     return Text(
       text,
-      style: AppTypography.caption(brightness).copyWith(fontWeight: FontWeight.w700),
+      style: AppTypography.caption(brightness)
+          .copyWith(fontWeight: FontWeight.w700),
     );
   }
 }

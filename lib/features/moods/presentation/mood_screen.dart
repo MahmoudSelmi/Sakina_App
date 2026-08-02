@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/mood_playlist_builder.dart';
+import '../../../shared/widgets/ambient_sound_sheet.dart';
 import '../../../shared/widgets/reciter_avatar.dart';
 import '../../../shared/widgets/staggered_fade_in.dart';
 import '../../player/cubit/player_cubit.dart';
@@ -46,9 +47,10 @@ class MoodScreen extends StatelessWidget {
                         height: 40.w,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.white.withOpacity(0.12),
+                          color: Colors.white.withValues(alpha: 0.12),
                         ),
-                        child: const Icon(Icons.arrow_forward_rounded, color: Colors.white),
+                        child: const Icon(Icons.arrow_forward_rounded,
+                            color: Colors.white),
                       ),
                     ),
                   ],
@@ -64,7 +66,7 @@ class MoodScreen extends StatelessWidget {
                       height: 84.w,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.14),
+                        color: Colors.white.withValues(alpha: 0.14),
                       ),
                       child: Icon(info.icon, color: Colors.white, size: 38.sp),
                     ),
@@ -83,7 +85,9 @@ class MoodScreen extends StatelessWidget {
                       child: Text(
                         info.subtitle,
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.white.withOpacity(0.75), fontSize: 13.sp),
+                        style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.75),
+                            fontSize: 13.sp),
                       ),
                     ),
                   ],
@@ -93,30 +97,54 @@ class MoodScreen extends StatelessWidget {
               if (items.isNotEmpty)
                 StaggeredFadeIn(
                   index: 1,
-                  child: GestureDetector(
-                    onTap: () => context.read<PlayerCubit>().playQueue(items, startIndex: 0),
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 26.w, vertical: 12.h),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.play_arrow_rounded, color: info.gradient.first, size: 22.sp),
-                          SizedBox(width: 6.w),
-                          Text(
-                            'ابدأ الاستماع',
-                            style: TextStyle(
-                              color: info.gradient.first,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 14.sp,
-                            ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      GestureDetector(
+                        onTap: () => context
+                            .read<PlayerCubit>()
+                            .playQueue(items, startIndex: 0),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 26.w, vertical: 12.h),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(24),
                           ),
-                        ],
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.play_arrow_rounded,
+                                  color: info.gradient.first, size: 22.sp),
+                              SizedBox(width: 6.w),
+                              Text(
+                                'ابدأ الاستماع',
+                                style: TextStyle(
+                                  color: info.gradient.first,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 14.sp,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
+                      SizedBox(width: 10.w),
+                      GestureDetector(
+                        onTap: () => AmbientSoundSheet.show(context,
+                            mainIsPlaying: false),
+                        child: Container(
+                          width: 46.w,
+                          height: 46.w,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.16),
+                          ),
+                          child: const Icon(Icons.spa_rounded,
+                              color: Colors.white),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               SizedBox(height: 20.h),
@@ -126,11 +154,13 @@ class MoodScreen extends StatelessWidget {
                     color: brightness == Brightness.dark
                         ? AppColors.darkSurfaceElevated
                         : AppColors.lightSurface,
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(28)),
                   ),
                   child: items.isEmpty
                       ? Center(
-                          child: Text('مفيش تسجيلات متاحة دلوقتي', style: AppTypography.body(brightness)),
+                          child: Text('مفيش تسجيلات متاحة دلوقتي',
+                              style: AppTypography.body(brightness)),
                         )
                       : ListView.separated(
                           padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 24.h),
@@ -146,32 +176,39 @@ class MoodScreen extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(16),
                                 child: InkWell(
                                   borderRadius: BorderRadius.circular(16),
-                                  onTap: () =>
-                                      context.read<PlayerCubit>().playQueue(items, startIndex: index),
+                                  onTap: () => context
+                                      .read<PlayerCubit>()
+                                      .playQueue(items, startIndex: index),
                                   child: Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                                    padding: EdgeInsets.symmetric(
+                                        horizontal: 12.w, vertical: 10.h),
                                     child: Row(
                                       children: [
                                         ReciterAvatar(
                                           reciterId: item.reciterId,
-                                          letter:
-                                              item.reciterName.isNotEmpty ? item.reciterName[0] : '؟',
+                                          letter: item.reciterName.isNotEmpty
+                                              ? item.reciterName[0]
+                                              : '؟',
                                           size: 42.w,
                                         ),
                                         SizedBox(width: 12.w),
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Text(item.surahArabicName,
-                                                  style: AppTypography.body(brightness)),
+                                                  style: AppTypography.body(
+                                                      brightness)),
                                               Text(item.reciterName,
-                                                  style: AppTypography.caption(brightness)),
+                                                  style: AppTypography.caption(
+                                                      brightness)),
                                             ],
                                           ),
                                         ),
                                         Icon(Icons.play_circle_fill_rounded,
-                                            color: AppColors.primary, size: 22.sp),
+                                            color: AppColors.primary,
+                                            size: 22.sp),
                                       ],
                                     ),
                                   ),

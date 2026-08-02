@@ -58,7 +58,8 @@ class QueueSheet extends StatelessWidget {
                   builder: (context, state) {
                     if (state.queue.isEmpty) {
                       return Center(
-                        child: Text('القائمة فاضية', style: AppTypography.body(brightness)),
+                        child: Text('القائمة فاضية',
+                            style: AppTypography.body(brightness)),
                       );
                     }
                     return ListView.builder(
@@ -70,49 +71,64 @@ class QueueSheet extends StatelessWidget {
                         final isCurrent = index == state.currentIndex;
                         return Material(
                           color: isCurrent
-                              ? AppColors.primary.withOpacity(0.14)
+                              ? AppColors.primary.withValues(alpha: 0.14)
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(14),
                           child: InkWell(
                             borderRadius: BorderRadius.circular(14),
                             onTap: () {
-                              context.read<PlayerCubit>().jumpToQueueIndex(index);
+                              context
+                                  .read<PlayerCubit>()
+                                  .jumpToQueueIndex(index);
                               Navigator.of(context).pop();
                             },
                             child: Padding(
-                              padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 8.w),
+                              padding: EdgeInsets.symmetric(
+                                  vertical: 8.h, horizontal: 8.w),
                               child: Row(
                                 children: [
                                   SizedBox(
                                     width: 28.w,
                                     child: isCurrent
                                         ? Icon(Icons.graphic_eq_rounded,
-                                            color: AppColors.primary, size: 18.sp)
+                                            color: AppColors.primary,
+                                            size: 18.sp)
                                         : Text(
                                             '${index + 1}',
-                                            style: AppTypography.caption(brightness),
+                                            style: AppTypography.caption(
+                                                brightness),
                                             textAlign: TextAlign.center,
                                           ),
                                   ),
                                   SizedBox(width: 10.w),
                                   ReciterAvatar(
                                     reciterId: item.reciterId,
-                                    letter: item.reciterName.isNotEmpty ? item.reciterName[0] : '؟',
+                                    letter: item.reciterName.isNotEmpty
+                                        ? item.reciterName[0]
+                                        : '؟',
                                     size: 40.w,
                                   ),
                                   SizedBox(width: 12.w),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           item.surahArabicName,
-                                          style: AppTypography.body(brightness).copyWith(
-                                            fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w400,
-                                            color: isCurrent ? AppColors.primary : null,
+                                          style: AppTypography.body(brightness)
+                                              .copyWith(
+                                            fontWeight: isCurrent
+                                                ? FontWeight.w700
+                                                : FontWeight.w400,
+                                            color: isCurrent
+                                                ? AppColors.primary
+                                                : null,
                                           ),
                                         ),
-                                        Text(item.reciterName, style: AppTypography.caption(brightness)),
+                                        Text(item.reciterName,
+                                            style: AppTypography.caption(
+                                                brightness)),
                                       ],
                                     ),
                                   ),

@@ -16,6 +16,7 @@ class LocalStorage {
     if (prefs == null) {
       throw StateError('LocalStorage.init() لازم يتنادى قبل الاستخدام');
     }
+
     return prefs;
   }
 
@@ -71,4 +72,6 @@ class StorageKeys {
   static const String streakLastDate = 'streak_last_date';
   static const String streakCurrent = 'streak_current';
   static const String streakLongest = 'streak_longest';
+  static const String ambientSound = 'ambient_sound';
+  static const String ambientVolume = 'ambient_volume';
 }

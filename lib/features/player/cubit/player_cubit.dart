@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:just_audio/just_audio.dart' hide PlayerState;
 import '../../../core/storage/local_storage.dart';
 import '../../../core/utils/notification_artwork_generator.dart';
+import '../../ambient/data/ambient_sound_service.dart';
 import '../../downloads/data/download_service.dart';
 import '../../khatma/data/khatma_service.dart';
 import '../../recently_played/data/recently_played_service.dart';
@@ -59,6 +60,7 @@ class PlayerCubit extends Cubit<PlayerState> {
         status: s.playing ? PlayerStatus.playing : PlayerStatus.paused,
         isBuffering: buffering,
       ));
+      AmbientSoundService.instance.syncWithPlayback(s.playing);
     });
 
     _persistTimer =
@@ -332,6 +334,7 @@ class PlayerCubit extends Cubit<PlayerState> {
     _persistTimer?.cancel();
     _sleepTimer?.cancel();
     _fadeTimer?.cancel();
+    await AmbientSoundService.instance.stop();
     await _handler.dispose();
     return super.close();
   }

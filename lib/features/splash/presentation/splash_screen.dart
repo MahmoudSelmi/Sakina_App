@@ -17,7 +17,8 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with TickerProviderStateMixin {
   late final AnimationController _logoController;
   late final AnimationController _glowController;
   late final Animation<double> _logoScale;
@@ -35,8 +36,14 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     );
 
     _logoScale = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 0.6, end: 1.08).chain(CurveTween(curve: Curves.easeOutBack)), weight: 65),
-      TweenSequenceItem(tween: Tween(begin: 1.08, end: 1.0).chain(CurveTween(curve: Curves.easeOut)), weight: 35),
+      TweenSequenceItem(
+          tween: Tween(begin: 0.6, end: 1.08)
+              .chain(CurveTween(curve: Curves.easeOutBack)),
+          weight: 65),
+      TweenSequenceItem(
+          tween: Tween(begin: 1.08, end: 1.0)
+              .chain(CurveTween(curve: Curves.easeOut)),
+          weight: 35),
     ]).animate(_logoController);
 
     _logoFade = CurvedAnimation(
@@ -83,7 +90,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
         transitionDuration: const Duration(milliseconds: 700),
         pageBuilder: (_, __, ___) => nextScreen,
         transitionsBuilder: (_, animation, __, child) {
-          final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+          final curved =
+              CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
           return FadeTransition(
             opacity: curved,
             child: ScaleTransition(
@@ -139,7 +147,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.accentGold.withOpacity(glow),
+                              color:
+                                  AppColors.accentGold.withValues(alpha: glow),
                               blurRadius: 48,
                               spreadRadius: 6,
                             ),
@@ -148,7 +157,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                         child: Icon(
                           Icons.mosque_rounded,
                           size: 64.sp,
-                          color: Colors.black.withOpacity(0.82),
+                          color: Colors.black.withValues(alpha: 0.82),
                         ),
                       ),
                     ),
@@ -160,7 +169,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                 opacity: _wordmarkFade,
                 child: ShaderMask(
                   shaderCallback: (bounds) =>
-                      LinearGradient(colors: AppColors.goldGradient).createShader(bounds),
+                      LinearGradient(colors: AppColors.goldGradient)
+                          .createShader(bounds),
                   child: Text(
                     'جَنَّتَكَ',
                     style: GoogleFonts.amiri(
@@ -177,7 +187,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                 child: Text(
                   'استمع... واطمئن',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.6),
+                    color: Colors.white.withValues(alpha: 0.6),
                     fontSize: 14.sp,
                     letterSpacing: 0.5,
                   ),

@@ -8,6 +8,7 @@ import 'core/storage/local_storage.dart';
 import 'core/theme/app_palette.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
+import 'features/ambient/data/ambient_sound_service.dart';
 import 'features/downloads/data/download_service.dart';
 import 'features/favorites/data/favorites_service.dart';
 import 'features/favorites/data/ayah_favorites_service.dart';
@@ -39,6 +40,7 @@ Future<void> main() async {
   DownloadService.instance.load();
   SettingsService.instance.load();
   VolumeBoostService.instance.load();
+  AmbientSoundService.instance.load();
 
   // بنحاول نهيّئ Firebase (لو المشروع متظبط بمفاتيح حقيقية)، بس من غير ما
   // نكسر التطبيق لو لسه مفيش إعداد - عشان تسجيل الدخول يبقى اختياري
