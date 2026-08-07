@@ -11,19 +11,36 @@ class AuthService {
   static final AuthService instance = AuthService._internal();
 
   final ValueNotifier<User?> currentUser = ValueNotifier<User?>(null);
+  final ValueNotifier<bool> isRestoringSession = ValueNotifier<bool>(true);
   bool _listening = false;
 
   /// هل فايربيز مهيّأ فعليًا بمفاتيح حقيقية؟ (يعتمد على firebase_options.dart)
-  bool get isAvailable => Firebase.apps.isNotEmpty;
+  bool get isAvailable {
+    try {
+      return Firebase.apps.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
 
-  void _ensureListening() {
-    if (_listening || !isAvailable) return;
+  /// لازم تتنادى مرة واحدة بعد نجاح Firebase.initializeApp() في main، عشان
+  /// نلحق حالة تسجيل الدخول المحفوظة من المرة اللي فاتت. من غيرها، الدخول
+  /// كان بيتفتكر جوه Firebase نفسه بس واجهة التطبيق ما كانتش بتشوفه إلا
+  /// بعد أول تسجيل دخول جديد - وده كان سبب "الدخول مش بيتفتكر".
+  void init() {
+    if (_listening || !isAvailable) {
+      isRestoringSession.value = false;
+      return;
+    }
     _listening = true;
+    currentUser.value = FirebaseAuth.instance.currentUser;
+    isRestoringSession.value = false;
     FirebaseAuth.instance.authStateChanges().listen((user) {
       currentUser.value = user;
     });
-    currentUser.value = FirebaseAuth.instance.currentUser;
   }
+
+  void _ensureListening() => init();
 
   Future<String?> signUp(String email, String password) async {
     if (!isAvailable) return 'المزامنة السحابية مش متاحة دلوقتي';

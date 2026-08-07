@@ -7,6 +7,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../shared/widgets/ambient_sound_sheet.dart';
 import '../../../shared/widgets/now_playing_visuals.dart';
+import '../../../shared/widgets/tilt_3d_card.dart';
 import '../../../shared/widgets/page_transitions.dart';
 import '../../downloads/data/download_service.dart';
 import '../../favorites/data/favorites_service.dart';
@@ -182,14 +183,16 @@ class _FullPlayerScreenState extends State<FullPlayerScreen>
                               ],
                             ),
                             const Spacer(),
-                            NowPlayingArt(
-                              reciterId: item.reciterId,
-                              letter: item.reciterName.isNotEmpty
-                                  ? item.reciterName[0]
-                                  : '؟',
-                              size: 264.w,
-                              isPlaying: state.isPlaying,
-                              heroTag: 'reciter-avatar-${item.reciterId}',
+                            Tilt3DCard(
+                              child: NowPlayingArt(
+                                reciterId: item.reciterId,
+                                letter: item.reciterName.isNotEmpty
+                                    ? item.reciterName[0]
+                                    : '؟',
+                                size: 264.w,
+                                isPlaying: state.isPlaying,
+                                heroTag: 'reciter-avatar-${item.reciterId}',
+                              ),
                             ),
                             const Spacer(),
                             Text(item.surahArabicName,

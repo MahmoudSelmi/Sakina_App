@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "330682939615",
+    "project_id": "jannatak-d9cb9",
+    "storage_bucket": "jannatak-d9cb9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:330682939615:android:37a45dbdc20b0edd55d16a",
+        "android_client_info": {
+          "package_name": "com.example.flutter_authentication_ui_hackathon"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC4Oa_grygMxMmRdINc3_FNF-sQdtCiTQU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:330682939615:android:6dfab1de9efc2c9a55d16a",
+        "android_client_info": {
+          "package_name": "com.jannataka.quran"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC4Oa_grygMxMmRdINc3_FNF-sQdtCiTQU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:330682939615:android:c318b0edbb0d85fb55d16a",
+        "android_client_info": {
+          "package_name": "com.jannataka.quran_premium"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC4Oa_grygMxMmRdINc3_FNF-sQdtCiTQU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

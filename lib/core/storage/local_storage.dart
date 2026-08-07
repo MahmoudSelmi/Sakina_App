@@ -16,7 +16,6 @@ class LocalStorage {
     if (prefs == null) {
       throw StateError('LocalStorage.init() لازم يتنادى قبل الاستخدام');
     }
-
     return prefs;
   }
 

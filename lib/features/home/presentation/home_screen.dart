@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:quran_premium/shared/widgets/NotificationService.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
@@ -19,7 +20,6 @@ import '../../favorites/data/surah_favorites_service.dart';
 import '../../khatma/data/khatma_service.dart';
 import '../../khatma/presentation/khatma_screen.dart';
 import '../../moods/presentation/mood_screen.dart';
-import '../../notifications/data/notification_service.dart';
 import '../../player/cubit/player_cubit.dart';
 import '../../player/cubit/player_state.dart';
 import '../../player/data/queue_item.dart';
@@ -693,12 +693,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           Navigator.of(context).push(
               fadeScaleRoute(MoodScreen(mood: suggested, reciters: reciters)));
         },
-      ),
-      (
-        icon: Icons.person_rounded,
-        label: 'البروفايل',
-        onTap: () =>
-            Navigator.of(context).push(fadeScaleRoute(const ProfileScreen())),
       ),
     ];
 

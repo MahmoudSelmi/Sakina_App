@@ -33,6 +33,7 @@ dependencies:
   cloud_firestore: ^5.4.4
   flutter_local_notifications: ^18.0.1
   timezone: ^0.9.4
+  firebase_crashlytics: ^4.3.10
 
 dev_dependencies:
   flutter_test:

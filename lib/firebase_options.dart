@@ -63,7 +63,6 @@ class DefaultFirebaseOptions {
     projectId: 'jannatak-d9cb9',
     storageBucket: 'jannatak-d9cb9.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyB2cb5ZZRl5xR2xqhwD_hFr3RRlMmsyGUk',
     appId: '1:330682939615:ios:1f721784758315f455d16a',
